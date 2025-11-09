@@ -34,5 +34,20 @@ export const useMachines = () => {
     });
   };
 
-  return { allMachines, addMachine };
+  const updateMachine = (machineId: string, updates: Partial<Machine>) => {
+    setAllMachines(prevMachines => {
+      const updatedMachines = prevMachines.map(machine =>
+        machine.id === machineId ? { ...machine, ...updates } : machine
+      );
+
+      // If the updated machine is a custom machine, update local storage
+      if (machineId.startsWith('custom-')) {
+        const customOnly = updatedMachines.filter(m => m.id.startsWith('custom-'));
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customOnly));
+      }
+      return updatedMachines;
+    });
+  };
+
+  return { allMachines, addMachine, updateMachine };
 };

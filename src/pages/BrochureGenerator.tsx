@@ -7,11 +7,13 @@ import { Separator } from "@/components/ui/separator";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from "sonner";
-import { useMachines } from "@/hooks/useMachines"; // Import the new hook
+import { useMachines } from "@/hooks/useMachines";
+import EditMachineImageDialog from "@/components/EditMachineImageDialog";
 
 const BrochureGenerator = () => {
-  const { allMachines } = useMachines(); // Use the hook to get all machines
+  const { allMachines, updateMachine } = useMachines();
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
+  const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
   const brochureRef = useRef<HTMLDivElement>(null);
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
@@ -26,6 +28,15 @@ const BrochureGenerator = () => {
     });
   };
 
+  const handleEditImageClick = (machine: Machine) => {
+    setEditingMachine(machine);
+  };
+
+  const handleSaveImage = (machineId: string, newImageUrl: string) => {
+    updateMachine(machineId, { imageUrl: newImageUrl });
+    setEditingMachine(null); // Close dialog
+  };
+
   const selectedMachines = allMachines.filter(machine => selectedMachineIds.has(machine.id));
   const totalPrice = selectedMachines.reduce((sum, machine) => sum + machine.price, 0);
 
@@ -35,27 +46,26 @@ const BrochureGenerator = () => {
       return;
     }
 
-    toast.loading("Generating brochure...");
+    toast.loading("Generating brochure...", { id: "pdf-gen" });
 
     const doc = new jsPDF('p', 'pt', 'a4');
-    const margin = 40; // Margin for the PDF page
+    const margin = 40;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     let yOffset = margin;
 
-    // Add a title page
     doc.setFontSize(24);
     doc.text("Icon Fitness Equipment Brochure", pageWidth / 2, pageHeight / 2 - 50, { align: 'center' });
     doc.setFontSize(12);
     doc.text("Your Partner in Fitness Excellence", pageWidth / 2, pageHeight / 2, { align: 'center' });
     doc.addPage();
-    yOffset = margin; // Reset yOffset for the new page
+    yOffset = margin;
 
     const brochureContentDiv = document.createElement('div');
-    brochureContentDiv.style.width = `${pageWidth - 2 * margin}pt`; // Set width to fit PDF page
+    brochureContentDiv.style.width = `${pageWidth - 2 * margin}pt`;
     brochureContentDiv.style.padding = '20pt';
     brochureContentDiv.style.boxSizing = 'border-box';
-    brochureContentDiv.style.backgroundColor = 'white'; // Ensure background is white for PDF
+    brochureContentDiv.style.backgroundColor = 'white';
 
     selectedMachines.forEach((machine, index) => {
       const machineItemDiv = document.createElement('div');
@@ -110,7 +120,6 @@ const BrochureGenerator = () => {
       brochureContentDiv.appendChild(machineItemDiv);
     });
 
-    // Add total price to the end
     const totalPriceDiv = document.createElement('div');
     totalPriceDiv.className = 'text-2xl font-bold text-right mt-8 p-4 bg-gray-50 rounded-lg';
     totalPriceDiv.style.fontSize = '24px';
@@ -123,7 +132,7 @@ const BrochureGenerator = () => {
     totalPriceDiv.textContent = `Total Estimated Price: $${totalPrice.toLocaleString()}`;
     brochureContentDiv.appendChild(totalPriceDiv);
 
-    document.body.appendChild(brochureContentDiv); // Temporarily add to DOM for html2canvas
+    document.body.appendChild(brochureContentDiv);
 
     const canvas = await html2canvas(brochureContentDiv, { scale: 2 });
     const imgData = canvas.toDataURL('image/png');
@@ -143,10 +152,10 @@ const BrochureGenerator = () => {
       heightLeft -= pageHeight;
     }
 
-    document.body.removeChild(brochureContentDiv); // Remove from DOM
+    document.body.removeChild(brochureContentDiv);
 
     doc.save('IconFitness_Brochure.pdf');
-    toast.success("Brochure generated successfully!");
+    toast.success("Brochure generated successfully!", { id: "pdf-gen" });
   };
 
   return (
@@ -166,12 +175,13 @@ const BrochureGenerator = () => {
           </div>
           <Separator className="my-8" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {allMachines.map((machine) => ( // Use allMachines from the hook
+            {allMachines.map((machine) => (
               <MachineCard
                 key={machine.id}
                 machine={machine}
                 isSelected={selectedMachineIds.has(machine.id)}
                 onSelect={handleSelectMachine}
+                onEditImageClick={handleEditImageClick}
               />
             ))}
           </div>
@@ -195,6 +205,15 @@ const BrochureGenerator = () => {
           )}
         </CardContent>
       </Card>
+
+      {editingMachine && (
+        <EditMachineImageDialog
+          isOpen={!!editingMachine}
+          onClose={() => setEditingMachine(null)}
+          machine={editingMachine}
+          onSave={handleSaveImage}
+        />
+      )}
     </div>
   );
 };
