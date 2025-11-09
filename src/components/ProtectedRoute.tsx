@@ -3,41 +3,18 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSession } from '@/contexts/SessionContext';
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 interface ProtectedRouteProps {
   adminOnly?: boolean;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) => {
-  const { session, isLoading } = useSession();
-  const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
+  const { session, isLoading: isSessionLoading } = useSession();
+  const { isAdmin, isLoadingAdmin } = useAdmin();
 
-  React.useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (session?.user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching admin status:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data?.is_admin || false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    if (!isLoading) {
-      checkAdminStatus();
-    }
-  }, [session, isLoading]);
-
-  if (isLoading || isAdmin === null) {
+  // If the session is still loading, show a general loading message
+  if (isSessionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-lg text-gray-600">Loading authentication...</p>
@@ -45,10 +22,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) =>
     );
   }
 
+  // If not logged in, redirect to the login page
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
+  // If the route requires admin privileges and admin status is still loading, show a specific loading message
+  if (adminOnly && isLoadingAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-lg text-gray-600">Checking admin privileges...</p>
+      </div>
+    );
+  }
+
+  // If the route requires admin privileges and the user is not an admin, show access denied
   if (adminOnly && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -61,6 +49,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ adminOnly = false }) =>
     );
   }
 
+  // If all checks pass, render the child routes
   return <Outlet />;
 };
 
