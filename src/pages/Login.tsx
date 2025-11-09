@@ -7,8 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
-import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle';
+import { Input } from '@/components/ui/input'; // Import shadcn Input
+import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Keep import for now
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -53,8 +53,8 @@ const Login: React.FC = () => {
             redirectTo={window.location.origin + '/'}
             components={{
               Input: (props) => {
-                // TEMPORARY: Using PasswordInputWithToggle for ALL inputs to debug
-                return <PasswordInputWithToggle {...props} />;
+                // TEMPORARY: Using shadcn Input for ALL inputs to debug if component override works
+                return <Input {...props} />;
               },
             }}
           />
