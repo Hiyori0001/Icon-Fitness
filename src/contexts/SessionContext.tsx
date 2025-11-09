@@ -30,7 +30,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
         if (event === 'SIGNED_IN') {
           toast.success('Welcome back!');
-          navigate('/'); // Redirect to home after sign-in
+          // Removed automatic redirect to '/'
         } else if (event === 'SIGNED_OUT') {
           toast.info('You have been signed out.');
           navigate('/login'); // Redirect to login after sign-out
