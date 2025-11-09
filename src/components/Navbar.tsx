@@ -4,11 +4,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile'; // Assuming this hook exists for responsiveness
+import { Menu, LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useSession } from '@/contexts/SessionContext'; // Import useSession
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 const Navbar = () => {
   const isMobile = useIsMobile();
+  const { session, signOut, isLoading: isSessionLoading } = useSession();
+  const { isAdmin, isLoadingAdmin } = useAdmin();
 
   const navLinks = (
     <>
@@ -18,12 +22,16 @@ const Navbar = () => {
       <Link to="/about" className="text-lg font-medium hover:text-primary transition-colors">
         About
       </Link>
-      <Link to="/brochure-generator" className="text-lg font-medium hover:text-primary transition-colors">
-        Brochure Generator
-      </Link>
-      <Link to="/add-machine">
-        <Button className="text-lg px-6 py-2">Add Custom Machine</Button>
-      </Link>
+      {session && ( // Only show Brochure Generator if logged in
+        <Link to="/brochure-generator" className="text-lg font-medium hover:text-primary transition-colors">
+          Brochure Generator
+        </Link>
+      )}
+      {session && isAdmin && ( // Only show Add Custom Machine if logged in and admin
+        <Link to="/add-machine">
+          <Button className="text-lg px-6 py-2">Add Custom Machine</Button>
+        </Link>
+      )}
     </>
   );
 
@@ -34,24 +42,36 @@ const Navbar = () => {
           Icon Fitness
         </Link>
 
-        {isMobile ? (
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <div className="flex flex-col space-y-4 mt-6">
-                {navLinks}
-              </div>
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <div className="flex items-center space-x-6">
-            {navLinks}
-          </div>
-        )}
+        <div className="flex items-center space-x-4">
+          {isMobile ? (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <div className="flex flex-col space-y-4 mt-6">
+                  {navLinks}
+                  {!isSessionLoading && session && (
+                    <Button onClick={signOut} variant="ghost" className="text-lg px-6 py-2 justify-start">
+                      <LogOut className="mr-2 h-5 w-5" /> Sign Out
+                    </Button>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <div className="flex items-center space-x-6">
+              {navLinks}
+              {!isSessionLoading && session && (
+                <Button onClick={signOut} variant="ghost" className="text-lg px-6 py-2">
+                  <LogOut className="mr-2 h-5 w-5" /> Sign Out
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

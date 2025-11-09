@@ -9,12 +9,14 @@ import html2canvas from 'html2canvas';
 import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import EditMachineImageDialog from "@/components/EditMachineImageDialog";
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 const BrochureGenerator = () => {
   const { allMachines, updateMachine } = useMachines();
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
   const brochureRef = useRef<HTMLDivElement>(null);
+  const { isAdmin } = useAdmin(); // Use the useAdmin hook
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
     setSelectedMachineIds(prev => {
@@ -29,12 +31,16 @@ const BrochureGenerator = () => {
   };
 
   const handleEditImageClick = (machine: Machine) => {
-    setEditingMachine(machine);
+    if (isAdmin) { // Only allow editing if user is an admin
+      setEditingMachine(machine);
+    } else {
+      toast.error("You do not have permission to edit machine images.");
+    }
   };
 
   const handleSaveImage = (machineId: string, newImageUrl: string) => {
     updateMachine(machineId, { imageUrl: newImageUrl });
-    setEditingMachine(null); // Close dialog
+    setEditingMachine(null);
   };
 
   const selectedMachines = allMachines.filter(machine => selectedMachineIds.has(machine.id));

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { Machine } from '@/data/machines';
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 interface EditMachineImageDialogProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>(machine.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
+  const { isAdmin } = useAdmin(); // Use the useAdmin hook
 
   React.useEffect(() => {
     if (isOpen) {
@@ -29,7 +31,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImageFile(e.target.files[0]);
-      setImageUrlInput(''); // Clear URL input if file is selected
+      setImageUrlInput('');
     } else {
       setImageFile(null);
     }
@@ -37,10 +39,15 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
 
   const handleImageUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageUrlInput(e.target.value);
-    setImageFile(null); // Clear file input if URL is being typed
+    setImageFile(null);
   };
 
   const handleSubmit = async () => {
+    if (!isAdmin) {
+      toast.error("You do not have permission to edit machine images.");
+      return;
+    }
+
     setIsUploading(true);
     let finalImageUrl = imageUrlInput;
 
@@ -78,7 +85,6 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
         return;
       }
     } else if (!finalImageUrl) {
-      // If no file uploaded and no URL provided, use a default placeholder
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
@@ -105,10 +111,10 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
               type="file"
               accept="image/*"
               onChange={handleFileChange}
-              disabled={isUploading}
+              disabled={isUploading || !isAdmin} // Disable if not admin
             />
             <p className="text-sm text-muted-foreground">
-              Or provide an image URL below.
+              Or provide an image URL below if you prefer.
             </p>
           </div>
           <div className="flex flex-col space-y-2">
@@ -118,7 +124,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
               placeholder="https://example.com/image.jpg"
               value={imageUrlInput}
               onChange={handleImageUrlInputChange}
-              disabled={isUploading || !!imageFile}
+              disabled={isUploading || !!imageFile || !isAdmin} // Disable if not admin
             />
           </div>
           {machine.imageUrl && (
@@ -130,7 +136,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={isUploading}>
+          <Button onClick={handleSubmit} disabled={isUploading || !isAdmin}> {/* Disable if not admin */}
             {isUploading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>

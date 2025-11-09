@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Machine } from "@/data/machines";
 import { Button } from "@/components/ui/button";
 import { Edit } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 interface MachineCardProps {
   machine: Machine;
@@ -13,6 +14,8 @@ interface MachineCardProps {
 }
 
 const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick }) => {
+  const { isAdmin } = useAdmin(); // Use the useAdmin hook
+
   return (
     <Card className="flex flex-col justify-between overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
@@ -37,15 +40,17 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
             Select for Brochure
           </label>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onEditImageClick(machine)}
-          className="ml-2"
-          title="Edit Machine Image"
-        >
-          <Edit className="h-5 w-5 text-gray-500 hover:text-primary" />
-        </Button>
+        {isAdmin && ( // Only show edit button if user is an admin
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEditImageClick(machine)}
+            className="ml-2"
+            title="Edit Machine Image"
+          >
+            <Edit className="h-5 w-5 text-gray-500 hover:text-primary" />
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

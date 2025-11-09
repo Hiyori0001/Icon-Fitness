@@ -10,7 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { supabase } from '@/integrations/supabase/client';
+import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -26,16 +27,16 @@ const formSchema = z.object({
   price: z.coerce.number().min(1, {
     message: "Price must be at least 1.",
   }),
-  // imageUrl is now optional, as it can come from an upload or be a direct URL
   imageUrl: z.string().url({
     message: "Please enter a valid URL for the image.",
-  }).optional().or(z.literal("")), // Allow empty string if no URL is provided
+  }).optional().or(z.literal("")),
 });
 
 const AddMachine = () => {
   const { addMachine } = useMachines();
   const navigate = useNavigate();
-  const [imageFile, setImageFile] = useState<File | null>(null); // State to hold the selected image file
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const { isAdmin, isLoadingAdmin } = useAdmin(); // Use the useAdmin hook
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,13 +49,18 @@ const AddMachine = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    let finalImageUrl = values.imageUrl || ''; // Start with URL from form, if any
+    if (!isAdmin) {
+      toast.error("You do not have permission to add machines.");
+      return;
+    }
+
+    let finalImageUrl = values.imageUrl || '';
 
     if (imageFile) {
       toast.loading("Uploading image...", { id: "image-upload" });
       const fileExtension = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
-      const filePath = `public/${fileName}`; // Store in a 'public' folder within the bucket
+      const filePath = `public/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('machine-images')
@@ -66,10 +72,9 @@ const AddMachine = () => {
       if (error) {
         toast.error(`Image upload failed: ${error.message}`, { id: "image-upload" });
         console.error("Supabase image upload error:", error);
-        return; // Stop submission if upload fails
+        return;
       }
 
-      // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('machine-images')
         .getPublicUrl(filePath);
@@ -83,16 +88,37 @@ const AddMachine = () => {
         return;
       }
     } else if (!finalImageUrl) {
-      // If no file uploaded and no URL provided, use a default placeholder
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
     addMachine({ ...values, imageUrl: finalImageUrl });
     toast.success("Machine added successfully!");
     form.reset();
-    setImageFile(null); // Clear the file input
-    navigate('/brochure-generator'); // Redirect to brochure generator to see the new machine
+    setImageFile(null);
+    navigate('/brochure-generator');
   };
+
+  if (isLoadingAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-lg text-gray-600">Loading admin status...</p>
+      </div>
+    );
+  }
+
+  // The ProtectedRoute component already handles redirection if not admin,
+  // but this provides an explicit message if somehow accessed directly.
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Access Denied</h1>
+          <p className="text-xl text-gray-600 mb-4">You do not have administrative privileges to add machines.</p>
+          <Button onClick={() => navigate('/')}>Go to Home</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
