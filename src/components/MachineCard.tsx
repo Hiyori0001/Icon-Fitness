@@ -19,7 +19,9 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
   return (
     <Card className="flex flex-col justify-between overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
-        <img src={machine.imageUrl} alt={machine.name} className="w-full h-48 object-cover" />
+        <div className="w-full h-48 flex items-center justify-center bg-gray-100"> {/* Added wrapper for contain */}
+          <img src={machine.imageUrl} alt={machine.name} className="max-w-full max-h-full object-contain" />
+        </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl font-semibold mb-2">{machine.name}</CardTitle>

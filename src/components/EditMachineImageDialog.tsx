@@ -130,7 +130,9 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
           {machine.imageUrl && (
             <div className="mt-4">
               <Label>Current Image:</Label>
-              <img src={machine.imageUrl} alt="Current Machine" className="w-32 h-32 object-cover rounded-md mt-2" />
+              <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-md mt-2"> {/* Added wrapper for contain */}
+                <img src={machine.imageUrl} alt="Current Machine" className="max-w-full max-h-full object-contain" />
+              </div>
             </div>
           )}
         </div>
