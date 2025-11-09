@@ -4,15 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
 import { toast } from 'sonner';
 
+// Extend Machine interface to include original_machine_id for internal tracking
+export interface MachineWithOriginalId extends Machine {
+  original_machine_id?: string | null;
+}
+
 export const useMachines = () => {
   const { user, isLoading: isSessionLoading } = useSession();
-  const [allMachines, setAllMachines] = useState<Machine[]>([]);
+  const [allMachines, setAllMachines] = useState<MachineWithOriginalId[]>([]);
   const [isLoadingCustomMachines, setIsLoadingCustomMachines] = useState(true);
 
   useEffect(() => {
     const fetchAndMergeMachines = async () => {
       setIsLoadingCustomMachines(true);
-      let customMachines: Machine[] = [];
+      let customMachines: MachineWithOriginalId[] = [];
 
       if (user) {
         const { data, error } = await supabase
@@ -30,14 +35,14 @@ export const useMachines = () => {
             description: dbMachine.description,
             price: dbMachine.price,
             imageUrl: dbMachine.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
-            original_machine_id: dbMachine.original_machine_id, // Include this for merging
+            original_machine_id: dbMachine.original_machine_id,
           }));
         }
       }
 
       // Create a map for quick lookup of custom machines by their original_machine_id
-      const customMachineOverrides = new Map<string, Machine>();
-      const purelyCustomMachines: Machine[] = [];
+      const customMachineOverrides = new Map<string, MachineWithOriginalId>();
+      const purelyCustomMachines: MachineWithOriginalId[] = [];
 
       customMachines.forEach(cm => {
         if (cm.original_machine_id) {
@@ -47,19 +52,14 @@ export const useMachines = () => {
         }
       });
 
-      // Merge gymMachines with custom overrides
+      // Merge gymMachines with custom overrides, maintaining original order
       const mergedMachines = gymMachines.map(gm => {
         if (customMachineOverrides.has(gm.id)) {
           const override = customMachineOverrides.get(gm.id)!;
-          // Override only the fields that are present in the custom machine
           return {
-            ...gm,
-            id: override.id, // Use the custom machine's UUID as the primary ID for display
-            name: override.name,
-            description: override.description,
-            price: override.price,
-            imageUrl: override.imageUrl,
-            original_machine_id: gm.id, // Keep track of the original ID
+            ...gm, // Start with original machine data
+            ...override, // Override with custom data
+            original_machine_id: gm.id, // Ensure original_machine_id points to the predefined ID
           };
         }
         return gm;
@@ -105,7 +105,7 @@ export const useMachines = () => {
     }
 
     const addedMachineData = data[0];
-    const addedMachine: Machine = {
+    const addedMachine: MachineWithOriginalId = {
       id: addedMachineData.id,
       name: addedMachineData.name,
       description: addedMachineData.description,
@@ -128,7 +128,7 @@ export const useMachines = () => {
     const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(machineId);
 
     if (isUUID) {
-      // This is an existing custom machine, perform an update
+      // This is an existing custom machine (or a customized predefined machine that now has a UUID)
       const { error } = await supabase
         .from('custom_machines')
         .update(updates)
@@ -218,7 +218,7 @@ export const useMachines = () => {
         }
 
         const customizedMachineData = insertData[0];
-        const customizedMachine: Machine = {
+        const customizedMachine: MachineWithOriginalId = {
           id: customizedMachineData.id, // This will be a new UUID
           name: customizedMachineData.name,
           description: customizedMachineData.description,
@@ -227,10 +227,15 @@ export const useMachines = () => {
           original_machine_id: customizedMachineData.original_machine_id,
         };
 
-        // Replace the original predefined machine with the new custom one in the state
+        // Find the index of the original predefined machine and replace it
         setAllMachines(prevMachines => {
-          const updatedMachines = prevMachines.filter(m => m.id !== machineId); // Remove original predefined
-          return [...updatedMachines, customizedMachine]; // Add the new custom version
+          const index = prevMachines.findIndex(m => m.id === machineId);
+          if (index !== -1) {
+            const newMachines = [...prevMachines];
+            newMachines[index] = customizedMachine;
+            return newMachines;
+          }
+          return [...prevMachines, customizedMachine]; // Fallback if not found (shouldn't happen for predefined)
         });
         toast.success("Machine customized successfully!");
       }
