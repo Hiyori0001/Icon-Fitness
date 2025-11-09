@@ -1,25 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Machine } from "@/data/machines";
+import { MachineWithOriginalId } from "@/hooks/useMachines"; // Use the extended interface
 import { Button } from "@/components/ui/button";
-import { Edit } from 'lucide-react';
-import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
+import { Edit, Trash } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
+import DeleteMachineDialog from './DeleteMachineDialog'; // Import the new dialog
 
 interface MachineCardProps {
-  machine: Machine;
+  machine: MachineWithOriginalId; // Use the extended interface
   isSelected: boolean;
   onSelect: (machineId: string, isSelected: boolean) => void;
-  onEditImageClick: (machine: Machine) => void;
+  onEditImageClick: (machine: MachineWithOriginalId) => void; // Update prop type
+  onDeleteMachine: (machineId: string, isCustomizedPredefined: boolean) => void; // New prop for delete
 }
 
-const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick }) => {
-  const { isAdmin } = useAdmin(); // Use the useAdmin hook
+const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick, onDeleteMachine }) => {
+  const { isAdmin } = useAdmin();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (
     <Card className="flex flex-col justify-between overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
-        <div className="w-full h-48 flex items-center justify-center bg-gray-100"> {/* Added wrapper for contain */}
+        <div className="w-full h-48 flex items-center justify-center bg-gray-100">
           <img src={machine.imageUrl} alt={machine.name} className="max-w-full max-h-full object-contain" />
         </div>
       </CardHeader>
@@ -42,18 +45,36 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
             Select for Brochure
           </label>
         </div>
-        {isAdmin && ( // Only show edit button if user is an admin
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEditImageClick(machine)}
-            className="ml-2"
-            title="Edit Machine Image"
-          >
-            <Edit className="h-5 w-5 text-gray-500 hover:text-primary" />
-          </Button>
+        {isAdmin && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEditImageClick(machine)}
+              title="Edit Machine Image"
+            >
+              <Edit className="h-5 w-5 text-gray-500 hover:text-primary" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDeleteDialog(true)}
+              title={machine.original_machine_id ? "Revert Customization" : "Delete Custom Machine"}
+            >
+              <Trash className="h-5 w-5 text-red-500 hover:text-red-700" />
+            </Button>
+          </div>
         )}
       </CardFooter>
+
+      {isAdmin && showDeleteDialog && (
+        <DeleteMachineDialog
+          isOpen={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          machine={machine}
+          onConfirmDelete={onDeleteMachine}
+        />
+      )}
     </Card>
   );
 };

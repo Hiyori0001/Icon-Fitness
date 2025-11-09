@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Machine } from "@/data/machines";
+import { MachineWithOriginalId } from "@/hooks/useMachines"; // Use the extended interface
 import MachineCard from "@/components/MachineCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +9,14 @@ import html2canvas from 'html2canvas';
 import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import EditMachineImageDialog from "@/components/EditMachineImageDialog";
-import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
+import { useAdmin } from '@/hooks/useAdmin';
 
 const BrochureGenerator = () => {
-  const { allMachines, updateMachine } = useMachines();
+  const { allMachines, updateMachine, deleteMachine } = useMachines(); // Get deleteMachine
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
-  const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
+  const [editingMachine, setEditingMachine] = useState<MachineWithOriginalId | null>(null); // Update type
   const brochureRef = useRef<HTMLDivElement>(null);
-  const { isAdmin } = useAdmin(); // Use the useAdmin hook
+  const { isAdmin } = useAdmin();
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
     setSelectedMachineIds(prev => {
@@ -30,8 +30,8 @@ const BrochureGenerator = () => {
     });
   };
 
-  const handleEditImageClick = (machine: Machine) => {
-    if (isAdmin) { // Only allow editing if user is an admin
+  const handleEditImageClick = (machine: MachineWithOriginalId) => { // Update parameter type
+    if (isAdmin) {
       setEditingMachine(machine);
     } else {
       toast.error("You do not have permission to edit machine images.");
@@ -41,6 +41,15 @@ const BrochureGenerator = () => {
   const handleSaveImage = (machineId: string, newImageUrl: string) => {
     updateMachine(machineId, { imageUrl: newImageUrl });
     setEditingMachine(null);
+  };
+
+  const handleDeleteMachine = (machineId: string, isCustomizedPredefined: boolean) => {
+    deleteMachine(machineId, isCustomizedPredefined);
+    setSelectedMachineIds(prev => { // Also remove from selected if it was there
+      const newSet = new Set(prev);
+      newSet.delete(machineId);
+      return newSet;
+    });
   };
 
   const selectedMachines = allMachines.filter(machine => selectedMachineIds.has(machine.id));
@@ -188,6 +197,7 @@ const BrochureGenerator = () => {
                 isSelected={selectedMachineIds.has(machine.id)}
                 onSelect={handleSelectMachine}
                 onEditImageClick={handleEditImageClick}
+                onDeleteMachine={handleDeleteMachine} // Pass the new delete handler
               />
             ))}
           </div>

@@ -58,7 +58,11 @@ export const useMachines = () => {
           const override = customMachineOverrides.get(gm.id)!;
           return {
             ...gm, // Start with original machine data
-            ...override, // Override with custom data
+            id: override.id, // Use the custom machine's UUID as the primary ID for display
+            name: override.name,
+            description: override.description,
+            price: override.price,
+            imageUrl: override.imageUrl,
             original_machine_id: gm.id, // Ensure original_machine_id points to the predefined ID
           };
         }
@@ -242,5 +246,53 @@ export const useMachines = () => {
     }
   };
 
-  return { allMachines, addMachine, updateMachine, isLoadingCustomMachines };
+  const deleteMachine = async (machineId: string, isCustomizedPredefined: boolean) => {
+    if (!user) {
+      toast.error("You must be logged in to delete machines.");
+      return;
+    }
+
+    if (isCustomizedPredefined) {
+      // If it's a customized predefined machine, delete the custom override
+      const { error } = await supabase
+        .from('custom_machines')
+        .delete()
+        .eq('id', machineId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error("Error reverting custom machine:", error);
+        toast.error(`Failed to revert customization: ${error.message}`);
+        return;
+      }
+
+      // Revert to the original predefined machine in the state
+      setAllMachines(prevMachines => {
+        const originalMachine = gymMachines.find(gm => gm.id === prevMachines.find(pm => pm.id === machineId)?.original_machine_id);
+        if (originalMachine) {
+          return prevMachines.map(m => m.id === machineId ? originalMachine : m);
+        }
+        return prevMachines.filter(m => m.id !== machineId); // Should not happen for predefined
+      });
+      toast.success("Machine customization reverted successfully!");
+    } else {
+      // If it's a purely custom machine, delete it entirely
+      const { error } = await supabase
+        .from('custom_machines')
+        .delete()
+        .eq('id', machineId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error("Error deleting custom machine:", error);
+        toast.error(`Failed to delete custom machine: ${error.message}`);
+        return;
+      }
+
+      setAllMachines(prevMachines => prevMachines.filter(machine => machine.id !== machineId));
+      toast.success("Custom machine deleted successfully!");
+    }
+  };
+
+  return { allMachines, addMachine, updateMachine, deleteMachine, isLoadingCustomMachines };
 };
