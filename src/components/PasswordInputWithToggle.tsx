@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
-import { Label } from "@/components/ui/label";     // Import Label
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 interface PasswordInputWithToggleProps extends React.InputHTMLAttributes<HTMLInputElement> {}
@@ -13,9 +13,10 @@ const PasswordInputWithToggle = React.forwardRef<HTMLInputElement, PasswordInput
     const [showPassword, setShowPassword] = React.useState(false);
 
     return (
-      <div className={cn("flex flex-col space-y-2", className)}>
+      // Added a bright background and border to this container for debugging visibility
+      <div className={cn("flex flex-col space-y-2 p-2 border-2 border-red-500 bg-yellow-100", className)}>
         <Input
-          type={showPassword ? "text" : "password"} // Dynamically change input type
+          type={showPassword ? "text" : "password"}
           ref={ref}
           {...props}
         />
@@ -26,7 +27,8 @@ const PasswordInputWithToggle = React.forwardRef<HTMLInputElement, PasswordInput
             onCheckedChange={(checked) => setShowPassword(checked as boolean)}
             disabled={props.disabled}
           />
-          <Label htmlFor="show-password" className="text-sm font-medium leading-none cursor-pointer">
+          {/* Added bright text color to the label for debugging visibility */}
+          <Label htmlFor="show-password" className="text-sm font-medium leading-none cursor-pointer text-blue-700">
             Show Password
           </Label>
         </div>
