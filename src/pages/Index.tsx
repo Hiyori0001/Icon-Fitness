@@ -23,6 +23,11 @@ const Index = () => {
                 Generate Brochure
               </Button>
             </Link>
+            <Link to="/add-machine">
+              <Button className="w-full sm:w-auto px-8 py-3 text-lg bg-green-600 hover:bg-green-700 text-white">
+                Add Custom Machine
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

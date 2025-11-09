@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { gymMachines, Machine } from "@/data/machines";
+import { Machine } from "@/data/machines";
 import MachineCard from "@/components/MachineCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from "sonner";
-
-const ITEMS_PER_PAGE = 9; // Number of machine items per PDF page
+import { useMachines } from "@/hooks/useMachines"; // Import the new hook
 
 const BrochureGenerator = () => {
+  const { allMachines } = useMachines(); // Use the hook to get all machines
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
   const brochureRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +26,7 @@ const BrochureGenerator = () => {
     });
   };
 
-  const selectedMachines = gymMachines.filter(machine => selectedMachineIds.has(machine.id));
+  const selectedMachines = allMachines.filter(machine => selectedMachineIds.has(machine.id));
   const totalPrice = selectedMachines.reduce((sum, machine) => sum + machine.price, 0);
 
   const generatePdf = async () => {
@@ -166,7 +166,7 @@ const BrochureGenerator = () => {
           </div>
           <Separator className="my-8" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {gymMachines.map((machine) => (
+            {allMachines.map((machine) => ( // Use allMachines from the hook
               <MachineCard
                 key={machine.id}
                 machine={machine}

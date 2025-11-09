@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import About from "./pages/About"; // Import the About page
-import BrochureGenerator from "./pages/BrochureGenerator"; // Import the BrochureGenerator page
+import About from "./pages/About";
+import BrochureGenerator from "./pages/BrochureGenerator";
+import AddMachine from "./pages/AddMachine"; // Import the new AddMachine page
 
 const queryClient = new QueryClient();
 
@@ -18,8 +19,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} /> {/* Add About route */}
-          <Route path="/brochure-generator" element={<BrochureGenerator />} /> {/* Add Brochure Generator route */}
+          <Route path="/about" element={<About />} />
+          <Route path="/brochure-generator" element={<BrochureGenerator />} />
+          <Route path="/add-machine" element={<AddMachine />} /> {/* Add AddMachine route */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
