@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
-// Removed: import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle';
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -50,7 +49,6 @@ const Login: React.FC = () => {
             }}
             theme="light"
             redirectTo={window.location.origin + '/'}
-            // Removed: components prop that was overriding Input
           />
         </CardContent>
       </Card>
