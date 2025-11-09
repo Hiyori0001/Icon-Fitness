@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -25,16 +26,16 @@ const formSchema = z.object({
   price: z.coerce.number().min(1, {
     message: "Price must be at least 1.",
   }),
+  // imageUrl is now optional, as it can come from an upload or be a direct URL
   imageUrl: z.string().url({
     message: "Please enter a valid URL for the image.",
-  }).min(5, {
-    message: "Image URL is required.",
-  }),
+  }).optional().or(z.literal("")), // Allow empty string if no URL is provided
 });
 
 const AddMachine = () => {
   const { addMachine } = useMachines();
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState<File | null>(null); // State to hold the selected image file
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,10 +47,50 @@ const AddMachine = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    addMachine(values);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    let finalImageUrl = values.imageUrl || ''; // Start with URL from form, if any
+
+    if (imageFile) {
+      toast.loading("Uploading image...", { id: "image-upload" });
+      const fileExtension = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+      const filePath = `public/${fileName}`; // Store in a 'public' folder within the bucket
+
+      const { data, error } = await supabase.storage
+        .from('machine-images')
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        toast.error(`Image upload failed: ${error.message}`, { id: "image-upload" });
+        console.error("Supabase image upload error:", error);
+        return; // Stop submission if upload fails
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('machine-images')
+        .getPublicUrl(filePath);
+
+      if (publicUrlData) {
+        finalImageUrl = publicUrlData.publicUrl;
+        toast.success("Image uploaded successfully!", { id: "image-upload" });
+      } else {
+        toast.error("Could not get public URL for uploaded image.", { id: "image-upload" });
+        console.error("Supabase getPublicUrl error: No data returned.");
+        return;
+      }
+    } else if (!finalImageUrl) {
+      // If no file uploaded and no URL provided, use a default placeholder
+      finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
+    }
+
+    addMachine({ ...values, imageUrl: finalImageUrl });
     toast.success("Machine added successfully!");
     form.reset();
+    setImageFile(null); // Clear the file input
     navigate('/brochure-generator'); // Redirect to brochure generator to see the new machine
   };
 
@@ -105,14 +146,27 @@ const AddMachine = () => {
                   </FormItem>
                 )}
               />
+              <FormItem>
+                <FormLabel>Upload Image</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                  />
+                </FormControl>
+                <p className="text-sm text-muted-foreground">
+                  Or provide an image URL below if you prefer.
+                </p>
+              </FormItem>
               <FormField
                 control={form.control}
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image URL</FormLabel>
+                    <FormLabel>Image URL (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., https://via.placeholder.com/150" {...field} />
+                      <Input placeholder="e.g., https://via.placeholder.com/150" {...field} disabled={!!imageFile} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
