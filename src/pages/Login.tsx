@@ -7,14 +7,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
-import { Input } from '@/components/ui/input'; // Import shadcn Input for non-password fields
-import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Import custom password input
+import { Input } from '@/components/ui/input';
+import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle';
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
   const navigate = useNavigate();
 
-  // If already logged in and not loading, redirect to home
   React.useEffect(() => {
     if (!isLoading && session) {
       navigate('/');
@@ -38,7 +37,7 @@ const Login: React.FC = () => {
         <CardContent>
           <Auth
             supabaseClient={supabase}
-            providers={[]} // You can add 'google', 'github', etc. here if desired
+            providers={[]}
             appearance={{
               theme: ThemeSupa,
               variables: {
@@ -51,15 +50,11 @@ const Login: React.FC = () => {
               },
             }}
             theme="light"
-            redirectTo={window.location.origin + '/'} // Redirect to home after successful auth
+            redirectTo={window.location.origin + '/'}
             components={{
               Input: (props) => {
-                // Use our custom PasswordInputWithToggle for password fields
-                if (props.type === 'password') {
-                  return <PasswordInputWithToggle {...props} />;
-                }
-                // Use the default shadcn Input for all other types
-                return <Input {...props} />;
+                // TEMPORARY: Using PasswordInputWithToggle for ALL inputs to debug
+                return <PasswordInputWithToggle {...props} />;
               },
             }}
           />
