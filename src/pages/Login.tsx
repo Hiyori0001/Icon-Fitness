@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input'; // Import shadcn Input for non-password fields
+import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Import custom password input
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -50,6 +52,16 @@ const Login: React.FC = () => {
             }}
             theme="light"
             redirectTo={window.location.origin + '/'} // Redirect to home after successful auth
+            components={{
+              Input: (props) => {
+                // Use our custom PasswordInputWithToggle for password fields
+                if (props.type === 'password') {
+                  return <PasswordInputWithToggle {...props} />;
+                }
+                // Use the default shadcn Input for all other types
+                return <Input {...props} />;
+              },
+            }}
           />
         </CardContent>
       </Card>
