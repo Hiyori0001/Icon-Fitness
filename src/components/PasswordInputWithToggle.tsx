@@ -29,9 +29,9 @@ const PasswordInputWithToggle = React.forwardRef<HTMLInputElement, PasswordInput
           disabled={props.disabled}
         >
           {showPassword ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
+            <EyeOff className="h-4 w-4 text-red-500" /> {/* Temporarily changed color to red */}
           ) : (
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <Eye className="h-4 w-4 text-red-500" /> {/* Temporarily changed color to red */}
           )}
           <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
         </Button>
