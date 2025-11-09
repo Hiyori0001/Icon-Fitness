@@ -58,21 +58,28 @@ export const useMachines = () => {
         price: newMachine.price,
         image_url: newMachine.imageUrl,
       })
-      .select()
-      .single();
+      .select(); // Removed .single() to ensure we get an array response
 
     if (error) {
       console.error("Error adding custom machine:", error);
-      toast.error("Failed to add custom machine.");
+      toast.error(`Failed to add custom machine: ${error.message}`); // Display Supabase error message
       return;
     }
 
+    if (!data || data.length === 0) {
+      console.error("Supabase insert returned no data.");
+      toast.error("Failed to add custom machine: No data returned from database.");
+      return;
+    }
+
+    const addedMachineData = data[0]; // Get the first (and only) inserted row
+
     const addedMachine: Machine = {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      imageUrl: data.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
+      id: addedMachineData.id,
+      name: addedMachineData.name,
+      description: addedMachineData.description,
+      price: addedMachineData.price,
+      imageUrl: addedMachineData.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
     };
 
     setAllMachines(prevMachines => [...prevMachines, addedMachine]);
@@ -107,7 +114,7 @@ export const useMachines = () => {
 
     if (error) {
       console.error("Error updating custom machine:", error);
-      toast.error("Failed to update custom machine.");
+      toast.error(`Failed to update custom machine: ${error.message}`); // Display Supabase error message
       return;
     }
 
