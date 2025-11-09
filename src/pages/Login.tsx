@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
-import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Still importing our custom component
+// Removed: import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle';
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -50,13 +50,7 @@ const Login: React.FC = () => {
             }}
             theme="light"
             redirectTo={window.location.origin + '/'}
-            components={{
-              Input: (props) => {
-                // Temporarily always use PasswordInputWithToggle for ALL inputs
-                // This is a diagnostic step to see if the Auth component is using our Input override at all.
-                return <PasswordInputWithToggle {...props} />;
-              },
-            }}
+            // Removed: components prop that was overriding Input
           />
         </CardContent>
       </Card>
