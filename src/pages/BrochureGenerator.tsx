@@ -9,12 +9,14 @@ import html2canvas from 'html2canvas';
 import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import EditMachineImageDialog from "@/components/EditMachineImageDialog";
+import EditMachineDetailsDialog from "@/components/EditMachineDetailsDialog"; // Import the new dialog
 import { useAdmin } from '@/hooks/useAdmin';
 
 const BrochureGenerator = () => {
-  const { allMachines, updateMachine, deleteMachine } = useMachines(); // Get deleteMachine
+  const { allMachines, updateMachine, deleteMachine } = useMachines();
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
-  const [editingMachine, setEditingMachine] = useState<MachineWithOriginalId | null>(null); // Update type
+  const [editingImageMachine, setEditingImageMachine] = useState<MachineWithOriginalId | null>(null);
+  const [editingDetailsMachine, setEditingDetailsMachine] = useState<MachineWithOriginalId | null>(null); // New state for editing details
   const brochureRef = useRef<HTMLDivElement>(null);
   const { isAdmin } = useAdmin();
 
@@ -30,9 +32,9 @@ const BrochureGenerator = () => {
     });
   };
 
-  const handleEditImageClick = (machine: MachineWithOriginalId) => { // Update parameter type
+  const handleEditImageClick = (machine: MachineWithOriginalId) => {
     if (isAdmin) {
-      setEditingMachine(machine);
+      setEditingImageMachine(machine);
     } else {
       toast.error("You do not have permission to edit machine images.");
     }
@@ -40,12 +42,25 @@ const BrochureGenerator = () => {
 
   const handleSaveImage = (machineId: string, newImageUrl: string) => {
     updateMachine(machineId, { imageUrl: newImageUrl });
-    setEditingMachine(null);
+    setEditingImageMachine(null);
+  };
+
+  const handleEditDetailsClick = (machine: MachineWithOriginalId) => { // New handler for editing details
+    if (isAdmin) {
+      setEditingDetailsMachine(machine);
+    } else {
+      toast.error("You do not have permission to edit machine details.");
+    }
+  };
+
+  const handleSaveDetails = (machineId: string, updates: { name?: string; description?: string; price?: number }) => {
+    updateMachine(machineId, updates);
+    setEditingDetailsMachine(null);
   };
 
   const handleDeleteMachine = (machineId: string, isCustomizedPredefined: boolean) => {
     deleteMachine(machineId, isCustomizedPredefined);
-    setSelectedMachineIds(prev => { // Also remove from selected if it was there
+    setSelectedMachineIds(prev => {
       const newSet = new Set(prev);
       newSet.delete(machineId);
       return newSet;
@@ -197,7 +212,8 @@ const BrochureGenerator = () => {
                 isSelected={selectedMachineIds.has(machine.id)}
                 onSelect={handleSelectMachine}
                 onEditImageClick={handleEditImageClick}
-                onDeleteMachine={handleDeleteMachine} // Pass the new delete handler
+                onEditDetailsClick={handleEditDetailsClick} // Pass the new handler
+                onDeleteMachine={handleDeleteMachine}
               />
             ))}
           </div>
@@ -222,12 +238,21 @@ const BrochureGenerator = () => {
         </CardContent>
       </Card>
 
-      {editingMachine && (
+      {editingImageMachine && (
         <EditMachineImageDialog
-          isOpen={!!editingMachine}
-          onClose={() => setEditingMachine(null)}
-          machine={editingMachine}
+          isOpen={!!editingImageMachine}
+          onClose={() => setEditingImageMachine(null)}
+          machine={editingImageMachine}
           onSave={handleSaveImage}
+        />
+      )}
+
+      {editingDetailsMachine && ( // Render the new dialog
+        <EditMachineDetailsDialog
+          isOpen={!!editingDetailsMachine}
+          onClose={() => setEditingDetailsMachine(null)}
+          machine={editingDetailsMachine}
+          onSave={handleSaveDetails}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { MachineWithOriginalId } from "@/hooks/useMachines"; // Use the extended interface
 import { Button } from "@/components/ui/button";
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Trash, Info } from 'lucide-react'; // Import Info icon
 import { useAdmin } from '@/hooks/useAdmin';
 import DeleteMachineDialog from './DeleteMachineDialog'; // Import the new dialog
 
@@ -11,11 +11,12 @@ interface MachineCardProps {
   machine: MachineWithOriginalId; // Use the extended interface
   isSelected: boolean;
   onSelect: (machineId: string, isSelected: boolean) => void;
-  onEditImageClick: (machine: MachineWithOriginalId) => void; // Update prop type
-  onDeleteMachine: (machineId: string, isCustomizedPredefined: boolean) => void; // New prop for delete
+  onEditImageClick: (machine: MachineWithOriginalId) => void;
+  onEditDetailsClick: (machine: MachineWithOriginalId) => void; // New prop for editing details
+  onDeleteMachine: (machineId: string, isCustomizedPredefined: boolean) => void;
 }
 
-const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick, onDeleteMachine }) => {
+const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick, onEditDetailsClick, onDeleteMachine }) => {
   const { isAdmin } = useAdmin();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -47,6 +48,14 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
         </div>
         {isAdmin && (
           <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEditDetailsClick(machine)} // New button for editing details
+              title="Edit Machine Details"
+            >
+              <Info className="h-5 w-5 text-gray-500 hover:text-blue-500" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
