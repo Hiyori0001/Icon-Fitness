@@ -7,8 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from '@/contexts/SessionContext';
 import { useNavigate } from 'react-router-dom';
-import { Input } from '@/components/ui/input'; // Import shadcn Input for general use
-import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Import your custom password input
+import { PasswordInputWithToggle } from '@/components/PasswordInputWithToggle'; // Still importing our custom component
 
 const Login: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -53,12 +52,9 @@ const Login: React.FC = () => {
             redirectTo={window.location.origin + '/'}
             components={{
               Input: (props) => {
-                // Conditionally render PasswordInputWithToggle for password fields
-                if (props.type === 'password') {
-                  return <PasswordInputWithToggle {...props} />;
-                }
-                // Use shadcn Input for all other types
-                return <Input {...props} />;
+                // Temporarily always use PasswordInputWithToggle for ALL inputs
+                // This is a diagnostic step to see if the Auth component is using our Input override at all.
+                return <PasswordInputWithToggle {...props} />;
               },
             }}
           />

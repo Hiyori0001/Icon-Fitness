@@ -13,8 +13,7 @@ const PasswordInputWithToggle = React.forwardRef<HTMLInputElement, PasswordInput
     const [showPassword, setShowPassword] = React.useState(false);
 
     return (
-      // Added a bright background and border to this container for debugging visibility
-      <div className={cn("flex flex-col space-y-2 p-2 border-2 border-red-500 bg-yellow-100", className)}>
+      <div className={cn("flex flex-col space-y-2", className)}>
         <Input
           type={showPassword ? "text" : "password"}
           ref={ref}
@@ -27,8 +26,7 @@ const PasswordInputWithToggle = React.forwardRef<HTMLInputElement, PasswordInput
             onCheckedChange={(checked) => setShowPassword(checked as boolean)}
             disabled={props.disabled}
           />
-          {/* Added bright text color to the label for debugging visibility */}
-          <Label htmlFor="show-password" className="text-sm font-medium leading-none cursor-pointer text-blue-700">
+          <Label htmlFor="show-password" className="text-sm font-medium leading-none cursor-pointer">
             Show Password
           </Label>
         </div>
