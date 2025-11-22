@@ -15,6 +15,7 @@ import EditMachineImageDialog from "@/components/EditMachineImageDialog";
 import EditMachineDetailsDialog from "@/components/EditMachineDetailsDialog";
 import { useAdmin } from '@/hooks/useAdmin';
 import BrochureContent from '@/components/BrochureContent'; // Import the new component
+import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
 
 const BrochureGenerator = () => {
   const { allMachines, updateMachine, deleteMachine } = useMachines();
@@ -187,7 +188,7 @@ const BrochureGenerator = () => {
                 {selectedMachines.map(machine => (
                   <li key={machine.id} className="flex justify-between items-center text-lg">
                     <span>{machine.name}</span>
-                    {includePrice && <span className="font-semibold">${machine.price.toLocaleString()}</span>}
+                    {includePrice && <span className="font-semibold">{formatCurrencyINR(machine.price)}</span>}
                   </li>
                 ))}
               </ul>
@@ -195,7 +196,7 @@ const BrochureGenerator = () => {
               {includePrice && (
                 <div className="flex justify-between items-center text-2xl font-bold text-primary">
                   <span>Total Estimated Price:</span>
-                  <span>${totalPrice.toLocaleString()}</span>
+                  <span>{formatCurrencyINR(totalPrice)}</span>
                 </div>
               )}
             </div>
