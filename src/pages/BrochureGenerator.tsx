@@ -103,7 +103,11 @@ const BrochureGenerator = () => {
     // Give React a moment to render and for styles to apply
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    const canvas = await html2canvas(tempDiv, { scale: 2 }); // Increase scale for better quality
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2, // Increase scale for better quality
+      useCORS: true, // Crucial for loading cross-origin images
+      allowTaint: true, // Allows loading images from other origins without tainting the canvas
+    });
     const imgData = canvas.toDataURL('image/png');
     const imgWidth = pageWidth - 2 * margin;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
