@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client'; // Import createRoot for dynamic rendering
+import { createRoot } from 'react-dom/client';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import MachineCard from "@/components/MachineCard";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,16 @@ import { useMachines } from "@/hooks/useMachines";
 import EditMachineImageDialog from "@/components/EditMachineImageDialog";
 import EditMachineDetailsDialog from "@/components/EditMachineDetailsDialog";
 import { useAdmin } from '@/hooks/useAdmin';
-import BrochureContent from '@/components/BrochureContent'; // Import the new component
-import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
+import BrochureContent from '@/components/BrochureContent';
+import { formatCurrencyINR } from '@/utils/currency';
+import PdfMachineItem from '@/components/PdfMachineItem'; // Import the new component
 
 const BrochureGenerator = () => {
   const { allMachines, updateMachine, deleteMachine } = useMachines();
   const [selectedMachineIds, setSelectedMachineIds] = useState<Set<string>>(new Set());
   const [editingImageMachine, setEditingImageMachine] = useState<MachineWithOriginalId | null>(null);
   const [editingDetailsMachine, setEditingDetailsMachine] = useState<MachineWithOriginalId | null>(null);
-  const [includePrice, setIncludePrice] = useState(true); // New state for price option
+  const [includePrice, setIncludePrice] = useState(true);
   const { isAdmin } = useAdmin();
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
@@ -87,50 +88,111 @@ const BrochureGenerator = () => {
     const margin = 40;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = margin; // Current Y position on the page
 
-    // Create a temporary div to render the BrochureContent component off-screen
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = `${pageWidth}pt`; // Set width to match PDF page width
-    document.body.appendChild(tempDiv);
+    // Add brochure title and description to the first page
+    doc.setFontSize(24);
+    doc.text("Icon Fitness Equipment Brochure", pageWidth / 2, yPos, { align: 'center' });
+    yPos += 30;
+    doc.setFontSize(14);
+    doc.text("Your Partner in Fitness Excellence", pageWidth / 2, yPos, { align: 'center' });
+    yPos += 40; // Space after title/description
 
-    // Render the BrochureContent component into the temporary div using createRoot
-    const root = createRoot(tempDiv);
-    root.render(
-      <BrochureContent machines={selectedMachines} includePrice={includePrice} />
-    );
+    // Add a separator
+    doc.setDrawColor(200);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 20;
 
-    // Give React a moment to render and for styles to apply
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Iterate through selected machines and add them to the PDF
+    for (const machine of selectedMachines) {
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px'; // Render off-screen
+      tempDiv.style.width = `${pageWidth - 2 * margin}pt`; // Constrain width for accurate measurement
+      document.body.appendChild(tempDiv);
 
-    const canvas = await html2canvas(tempDiv, {
-      scale: 2, // Increase scale for better quality
-      useCORS: true, // Crucial for loading cross-origin images
-      allowTaint: true, // Allows loading images from other origins without tainting the canvas
-    });
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = pageWidth - 2 * margin;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const root = createRoot(tempDiv);
+      root.render(<PdfMachineItem machine={machine} includePrice={includePrice} />);
 
-    let heightLeft = imgHeight;
-    let position = 0;
+      // Wait for React to render and images to load
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Add the first page
-    doc.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-    heightLeft -= (pageHeight - margin);
+      const cardHeight = tempDiv.offsetHeight;
+      const cardWidth = tempDiv.offsetWidth;
 
-    // Add subsequent pages if content overflows
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      doc.addPage();
-      doc.addImage(imgData, 'PNG', margin, position + margin, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Check if the card fits on the current page
+      if (yPos + cardHeight + margin > pageHeight) {
+        doc.addPage();
+        yPos = margin; // Reset Y position for new page
+      }
+
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: cardWidth,
+        height: cardHeight,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      doc.addImage(imgData, 'PNG', margin, yPos, cardWidth, cardHeight);
+
+      yPos += cardHeight + 10; // Add spacing between cards
+
+      root.unmount();
+      document.body.removeChild(tempDiv);
     }
 
-    // Clean up the temporary div and React root
-    root.unmount();
-    document.body.removeChild(tempDiv);
+    // Add summary if prices are included and there are selected machines
+    if (includePrice && selectedMachines.length > 0) {
+      const summaryTempDiv = document.createElement('div');
+      summaryTempDiv.style.position = 'absolute';
+      summaryTempDiv.style.left = '-9999px';
+      summaryTempDiv.style.width = `${pageWidth - 2 * margin}pt`;
+      document.body.appendChild(summaryTempDiv);
+
+      const summaryRoot = createRoot(summaryTempDiv);
+      summaryRoot.render(
+        <div className="p-6 bg-card rounded-lg shadow-md border">
+          <h2 className="text-2xl font-bold text-secondary-foreground mb-4">Selected Machines Summary</h2>
+          <ul className="space-y-2 mb-4">
+            {selectedMachines.map(machine => (
+              <li key={machine.id} className="flex justify-between items-center text-lg font-bold">
+                <span>{machine.name}</span>
+                <span>{formatCurrencyINR(machine.price)}</span>
+              </li>
+            ))}
+          </ul>
+          <Separator className="my-4" />
+          <div className="flex justify-between items-center text-2xl font-bold text-primary">
+            <span>Total Estimated Price:</span>
+            <span>{formatCurrencyINR(totalPrice)}</span>
+          </div>
+        </div>
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for render
+
+      const summaryHeight = summaryTempDiv.offsetHeight;
+      const summaryWidth = summaryTempDiv.offsetWidth;
+
+      if (yPos + summaryHeight + margin > pageHeight) {
+        doc.addPage();
+        yPos = margin;
+      }
+
+      const summaryCanvas = await html2canvas(summaryTempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: summaryWidth,
+        height: summaryHeight,
+      });
+      const summaryImgData = summaryCanvas.toDataURL('image/png');
+      doc.addImage(summaryImgData, 'PNG', margin, yPos, summaryWidth, summaryHeight);
+
+      summaryRoot.unmount();
+      document.body.removeChild(summaryTempDiv);
+    }
 
     doc.save('IconFitness_Brochure.pdf');
     toast.success("Brochure generated successfully!", { id: "pdf-gen" });
