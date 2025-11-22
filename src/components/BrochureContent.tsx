@@ -2,6 +2,7 @@ import * as React from 'react';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
 
 interface BrochureContentProps {
   machines: MachineWithOriginalId[];
@@ -32,7 +33,7 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
               <CardTitle className="text-xl font-bold mb-2">{machine.name}</CardTitle>
               <CardDescription className="text-gray-700 text-sm mb-3 font-bold">{machine.description}</CardDescription>
               {includePrice && (
-                <p className="text-lg font-bold text-primary">${machine.price.toLocaleString()}</p>
+                <p className="text-lg font-bold text-primary">{formatCurrencyINR(machine.price)}</p>
               )}
             </CardContent>
           </Card>
@@ -48,14 +49,14 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
               {machines.map(machine => (
                 <li key={machine.id} className="flex justify-between items-center text-lg font-bold">
                   <span>{machine.name}</span>
-                  <span>${machine.price.toLocaleString()}</span>
+                  <span>{formatCurrencyINR(machine.price)}</span>
                 </li>
               ))}
             </ul>
             <Separator className="my-4" />
             <div className="flex justify-between items-center text-2xl font-bold text-primary">
               <span>Total Estimated Price:</span>
-              <span>${totalPrice.toLocaleString()}</span>
+              <span>{formatCurrencyINR(totalPrice)}</span>
             </div>
           </div>
         </>

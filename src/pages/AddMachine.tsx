@@ -164,9 +164,9 @@ const AddMachine = () => {
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price ($)</FormLabel>
+                    <FormLabel>Price (INR)</FormLabel> {/* Updated label */}
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 750" {...field} onChange={event => field.onChange(parseFloat(event.target.value))} />
+                      <Input type="number" placeholder="e.g., 75000" {...field} onChange={event => field.onChange(parseFloat(event.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

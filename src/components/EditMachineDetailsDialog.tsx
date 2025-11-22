@@ -114,11 +114,11 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
+                  <FormLabel>Price (INR)</FormLabel> {/* Updated label */}
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="e.g., 750"
+                      placeholder="e.g., 75000"
                       {...field}
                       onChange={event => field.onChange(parseFloat(event.target.value))}
                       disabled={!isAdmin}

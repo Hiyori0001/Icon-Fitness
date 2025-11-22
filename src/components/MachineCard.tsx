@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash, Info } from 'lucide-react'; // Import Info icon
 import { useAdmin } from '@/hooks/useAdmin';
 import DeleteMachineDialog from './DeleteMachineDialog'; // Import the new dialog
+import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
 
 interface MachineCardProps {
   machine: MachineWithOriginalId; // Use the extended interface
@@ -30,7 +31,7 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl font-semibold mb-2">{machine.name}</CardTitle>
         <CardDescription className="text-gray-600 text-sm mb-3 line-clamp-3">{machine.description}</CardDescription>
-        <p className="text-lg font-bold text-primary">${machine.price.toLocaleString()}</p>
+        <p className="text-lg font-bold text-primary">{formatCurrencyINR(machine.price)}</p>
       </CardContent>
       <CardFooter className="p-4 border-t flex items-center justify-between">
         <div className="flex items-center space-x-2">
