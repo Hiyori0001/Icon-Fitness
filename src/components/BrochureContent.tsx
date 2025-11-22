@@ -1,6 +1,4 @@
-"use client";
-
-import * as React from 'react'; // Changed to explicit import
+import * as React from 'react';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +12,7 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
   const totalPrice = machines.reduce((sum, machine) => sum + machine.price, 0);
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen"> {/* Added subtle background color */}
+    <div className="p-8 bg-gray-50 min-h-screen">
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-primary mb-2">Icon Fitness Equipment Brochure</h1>
         <p className="text-xl text-gray-700">Your Partner in Fitness Excellence</p>
@@ -22,7 +20,7 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
 
       <Separator className="my-8" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"> {/* 3-column grid layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {machines.map((machine) => (
           <Card key={machine.id} className="flex flex-col overflow-hidden shadow-md">
             <CardHeader className="p-0">
@@ -31,10 +29,10 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
               </div>
             </CardHeader>
             <CardContent className="p-4 flex-grow">
-              <CardTitle className="text-xl font-bold mb-2">{machine.name}</CardTitle> {/* Bold */}
-              <CardDescription className="text-gray-700 text-sm mb-3 font-bold">{machine.description}</CardDescription> {/* Bold */}
+              <CardTitle className="text-xl font-bold mb-2">{machine.name}</CardTitle>
+              <CardDescription className="text-gray-700 text-sm mb-3 font-bold">{machine.description}</CardDescription>
               {includePrice && (
-                <p className="text-lg font-bold text-primary">${machine.price.toLocaleString()}</p> {/* Bold and conditional */}
+                <p className="text-lg font-bold text-primary">${machine.price.toLocaleString()}</p>
               )}
             </CardContent>
           </Card>
@@ -48,7 +46,7 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
             <h2 className="text-2xl font-bold text-secondary-foreground mb-4">Selected Machines Summary</h2>
             <ul className="space-y-2 mb-4">
               {machines.map(machine => (
-                <li key={machine.id} className="flex justify-between items-center text-lg font-bold"> {/* Bold */}
+                <li key={machine.id} className="flex justify-between items-center text-lg font-bold">
                   <span>{machine.name}</span>
                   <span>${machine.price.toLocaleString()}</span>
                 </li>
