@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import * as React from 'react'; // Changed to explicit import
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
