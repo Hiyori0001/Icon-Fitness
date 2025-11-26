@@ -9,9 +9,10 @@ import About from "./pages/About";
 import BrochureGenerator from "./pages/BrochureGenerator";
 import AddMachine from "./pages/AddMachine";
 import Navbar from "./components/Navbar";
-import Login from "./pages/Login"; // Import the Login page
-import { SessionContextProvider } from "./contexts/SessionContext"; // Import the SessionContextProvider
-import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
+import Login from "./pages/Login";
+import UpdatePassword from "./pages/UpdatePassword"; // Import the new UpdatePassword page
+import { SessionContextProvider } from "./contexts/SessionContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -21,16 +22,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SessionContextProvider> {/* Wrap the entire app with SessionContextProvider */}
+        <SessionContextProvider>
           <Navbar />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} /> {/* Add the Login route */}
+            <Route path="/login" element={<Login />} />
 
             {/* Protected routes for authenticated users */}
             <Route element={<ProtectedRoute />}>
               <Route path="/brochure-generator" element={<BrochureGenerator />} />
+              <Route path="/update-password" element={<UpdatePassword />} /> {/* Add the UpdatePassword route */}
             </Route>
 
             {/* Protected routes for admin users */}
@@ -48,4 +50,3 @@ const App = () => (
 );
 
 export default App;
-// Minor change to trigger Vercel redeploy
