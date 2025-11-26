@@ -29,6 +29,7 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+          <p className="text-xs text-gray-400 mt-8">Version 1.1</p> {/* Added this line */}
         </CardContent>
       </Card>
     </div>
