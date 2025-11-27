@@ -135,13 +135,16 @@ const BrochureGenerator = () => {
       const contentWidth = pageWidth - 2 * margin;
       tempDiv.style.width = `${contentWidth}pt`;
       tempDiv.style.boxSizing = 'border-box'; // Ensure padding/border are included in the width
+      tempDiv.style.padding = '0'; // Explicitly remove padding
+      tempDiv.style.margin = '0'; // Explicitly remove margin
+      tempDiv.style.overflow = 'hidden'; // Ensure nothing visually spills out
       document.body.appendChild(tempDiv);
 
       const root = createRoot(tempDiv);
       root.render(<PdfMachineRow machines={row} includePrice={includePrice} />);
 
       // Wait for React to render and images to load
-      await new Promise(resolve => setTimeout(resolve, 200)); // Increased timeout for stability
+      await new Promise(resolve => setTimeout(resolve, 300)); // Increased timeout again for safety
 
       // Get the actual rendered height of the content within the constrained width
       const renderedHeight = tempDiv.offsetHeight;
@@ -185,6 +188,9 @@ const BrochureGenerator = () => {
       const contentWidth = pageWidth - 2 * margin; // Recalculate for summary
       summaryTempDiv.style.width = `${contentWidth}pt`;
       summaryTempDiv.style.boxSizing = 'border-box';
+      summaryTempDiv.style.padding = '0'; // Explicitly remove padding
+      summaryTempDiv.style.margin = '0'; // Explicitly remove margin
+      summaryTempDiv.style.overflow = 'hidden'; // Ensure nothing visually spills out
       document.body.appendChild(summaryTempDiv);
 
       const summaryRoot = createRoot(summaryTempDiv);
@@ -220,7 +226,7 @@ const BrochureGenerator = () => {
         </div>
       );
 
-      await new Promise(resolve => setTimeout(resolve, 200)); // Increased timeout for stability
+      await new Promise(resolve => setTimeout(resolve, 300)); // Increased timeout for stability
 
       const summaryHeight = summaryTempDiv.offsetHeight;
       const summaryWidth = summaryTempDiv.offsetWidth;

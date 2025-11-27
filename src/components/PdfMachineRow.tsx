@@ -8,15 +8,26 @@ interface PdfMachineRowProps {
 }
 
 const PdfMachineRow: React.FC<PdfMachineRowProps> = ({ machines, includePrice }) => {
+  const numMachinesInRow = machines.length;
+  const gapSize = 16; // Equivalent to Tailwind's gap-4 in pixels
+  const totalGapWidth = (numMachinesInRow > 1 ? (numMachinesInRow - 1) * gapSize : 0);
+  const itemWidth = `calc((100% - ${totalGapWidth}px) / ${numMachinesInRow || 1})`;
+
   return (
-    <div className="grid grid-cols-3 gap-4 mb-4" style={{ width: '100%', pageBreakInside: 'avoid' }}>
-      {machines.map((machine) => (
-        <PdfMachineItem key={machine.id} machine={machine} includePrice={includePrice} />
+    <div className="flex mb-4" style={{ width: '100%', pageBreakInside: 'avoid' }}>
+      {machines.map((machine, index) => (
+        <div
+          key={machine.id}
+          style={{
+            width: itemWidth,
+            marginRight: index < numMachinesInRow - 1 ? `${gapSize}px` : '0',
+            flexShrink: 0, // Prevent items from shrinking
+          }}
+        >
+          <PdfMachineItem machine={machine} includePrice={includePrice} />
+        </div>
       ))}
-      {/* Add empty divs to fill the row if there are fewer than 3 machines */}
-      {Array.from({ length: 3 - machines.length }).map((_, index) => (
-        <div key={`empty-${index}`} className="flex-1"></div>
-      ))}
+      {/* No need for empty divs with this flex approach, as width is calculated per item */}
     </div>
   );
 };
