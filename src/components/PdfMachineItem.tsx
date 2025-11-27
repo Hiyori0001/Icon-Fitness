@@ -9,15 +9,15 @@ interface PdfMachineItemProps {
 
 const PdfMachineItem: React.FC<PdfMachineItemProps> = ({ machine, includePrice }) => {
   return (
-    <div className="flex border rounded-lg overflow-hidden shadow-sm mb-4 bg-white" style={{ width: '100%', pageBreakInside: 'avoid' }}>
-      <div className="w-32 h-32 flex-shrink-0 flex items-center justify-center bg-gray-100 p-2">
+    <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white h-full">
+      <div className="w-full h-40 flex-shrink-0 flex items-center justify-center bg-gray-100 p-2">
         <img src={machine.imageUrl} alt={machine.name} className="max-w-full max-h-full object-contain" />
       </div>
-      <div className="p-4 flex-grow">
-        <h3 className="text-lg font-bold mb-1">{machine.name}</h3>
-        <p className="text-sm text-gray-700 mb-2">{machine.description}</p>
+      <div className="p-3 flex-grow flex flex-col">
+        <h3 className="text-lg font-bold text-primary mb-1">{machine.name}</h3>
+        <p className="text-sm text-gray-700 flex-grow mb-2">{machine.description}</p>
         {includePrice && (
-          <p className="text-md font-bold text-primary">{formatCurrencyINR(machine.price)}</p>
+          <p className="text-md font-bold text-secondary-foreground mt-auto">{formatCurrencyINR(machine.price)}</p>
         )}
       </div>
     </div>

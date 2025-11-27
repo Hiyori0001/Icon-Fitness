@@ -16,7 +16,9 @@ import EditMachineDetailsDialog from "@/components/EditMachineDetailsDialog";
 import { useAdmin } from '@/hooks/useAdmin';
 import BrochureContent from '@/components/BrochureContent';
 import { formatCurrencyINR } from '@/utils/currency';
-import PdfMachineItem from '@/components/PdfMachineItem'; // Import the new component
+import PdfMachineRow from '@/components/PdfMachineRow'; // Import the new component
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const BrochureGenerator = () => {
   const { allMachines, updateMachine, deleteMachine } = useMachines();
@@ -24,6 +26,7 @@ const BrochureGenerator = () => {
   const [editingImageMachine, setEditingImageMachine] = useState<MachineWithOriginalId | null>(null);
   const [editingDetailsMachine, setEditingDetailsMachine] = useState<MachineWithOriginalId | null>(null);
   const [includePrice, setIncludePrice] = useState(true);
+  const [customPriceInput, setCustomPriceInput] = useState<string>(''); // New state for custom price
   const { isAdmin } = useAdmin();
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
@@ -90,21 +93,32 @@ const BrochureGenerator = () => {
     const pageHeight = doc.internal.pageSize.getHeight();
     let yPos = margin; // Current Y position on the page
 
-    // Add brochure title and description to the first page
-    doc.setFontSize(24);
+    // Brochure Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.setTextColor('#1a202c'); // Primary color
     doc.text("Icon Fitness Equipment Brochure", pageWidth / 2, yPos, { align: 'center' });
-    yPos += 30;
-    doc.setFontSize(14);
+    yPos += 35;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(16);
+    doc.setTextColor('#4a5568'); // Gray-700
     doc.text("Your Partner in Fitness Excellence", pageWidth / 2, yPos, { align: 'center' });
-    yPos += 40; // Space after title/description
+    yPos += 40;
 
     // Add a separator
-    doc.setDrawColor(200);
+    doc.setDrawColor('#e2e8f0'); // Border color
+    doc.setLineWidth(1);
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 20;
 
-    // Iterate through selected machines and add them to the PDF
-    for (const machine of selectedMachines) {
+    // Group machines into rows of two
+    const machineRows: MachineWithOriginalId[][] = [];
+    for (let i = 0; i < selectedMachines.length; i += 2) {
+      machineRows.push(selectedMachines.slice(i, i + 2));
+    }
+
+    // Iterate through machine rows and add them to the PDF
+    for (const row of machineRows) {
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px'; // Render off-screen
@@ -112,16 +126,16 @@ const BrochureGenerator = () => {
       document.body.appendChild(tempDiv);
 
       const root = createRoot(tempDiv);
-      root.render(<PdfMachineItem machine={machine} includePrice={includePrice} />);
+      root.render(<PdfMachineRow machines={row} includePrice={includePrice} />);
 
       // Wait for React to render and images to load
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const cardHeight = tempDiv.offsetHeight;
-      const cardWidth = tempDiv.offsetWidth;
+      const rowHeight = tempDiv.offsetHeight;
+      const rowWidth = tempDiv.offsetWidth;
 
-      // Check if the card fits on the current page
-      if (yPos + cardHeight + margin > pageHeight) {
+      // Check if the row fits on the current page
+      if (yPos + rowHeight + margin > pageHeight) {
         doc.addPage();
         yPos = margin; // Reset Y position for new page
       }
@@ -130,20 +144,24 @@ const BrochureGenerator = () => {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        width: cardWidth,
-        height: cardHeight,
+        width: rowWidth,
+        height: rowHeight,
+        backgroundColor: '#ffffff', // Ensure white background for canvas
       });
       const imgData = canvas.toDataURL('image/png');
-      doc.addImage(imgData, 'PNG', margin, yPos, cardWidth, cardHeight);
+      doc.addImage(imgData, 'PNG', margin, yPos, rowWidth, rowHeight);
 
-      yPos += cardHeight + 10; // Add spacing between cards
+      yPos += rowHeight + 15; // Add spacing between rows
 
       root.unmount();
       document.body.removeChild(tempDiv);
     }
 
-    // Add summary if prices are included and there are selected machines
-    if (includePrice && selectedMachines.length > 0) {
+    // Add summary if prices are included or custom price is provided
+    if (includePrice || (!includePrice && customPriceInput)) {
+      doc.addPage(); // Always add summary on a new page
+      yPos = margin;
+
       const summaryTempDiv = document.createElement('div');
       summaryTempDiv.style.position = 'absolute';
       summaryTempDiv.style.left = '-9999px';
@@ -152,21 +170,34 @@ const BrochureGenerator = () => {
 
       const summaryRoot = createRoot(summaryTempDiv);
       summaryRoot.render(
-        <div className="p-6 bg-card rounded-lg shadow-md border">
-          <h2 className="text-2xl font-bold text-secondary-foreground mb-4">Selected Machines Summary</h2>
-          <ul className="space-y-2 mb-4">
-            {selectedMachines.map(machine => (
-              <li key={machine.id} className="flex justify-between items-center text-lg font-bold">
-                <span>{machine.name}</span>
-                <span>{formatCurrencyINR(machine.price)}</span>
-              </li>
-            ))}
-          </ul>
-          <Separator className="my-4" />
-          <div className="flex justify-between items-center text-2xl font-bold text-primary">
-            <span>Total Estimated Price:</span>
-            <span>{formatCurrencyINR(totalPrice)}</span>
-          </div>
+        <div className="p-6 bg-gray-100 rounded-lg shadow-md border border-gray-200">
+          <h2 className="text-2xl font-bold text-primary mb-4">Selected Machines Summary</h2>
+          {includePrice && selectedMachines.length > 0 && (
+            <ul className="space-y-2 mb-4 text-gray-800">
+              {selectedMachines.map(machine => (
+                <li key={machine.id} className="flex justify-between items-center text-lg font-medium">
+                  <span>{machine.name}</span>
+                  <span>{formatCurrencyINR(machine.price)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Separator className="my-4 bg-gray-300" />
+          {includePrice && selectedMachines.length > 0 && (
+            <div className="flex justify-between items-center text-2xl font-bold text-primary">
+              <span>Total Estimated Price:</span>
+              <span>{formatCurrencyINR(totalPrice)}</span>
+            </div>
+          )}
+          {!includePrice && customPriceInput && (
+            <div className="flex justify-between items-center text-2xl font-bold text-primary">
+              <span>Custom Total Price:</span>
+              <span>{formatCurrencyINR(parseFloat(customPriceInput))}</span>
+            </div>
+          )}
+          {!includePrice && !customPriceInput && (
+            <p className="text-lg text-gray-600">No pricing information included.</p>
+          )}
         </div>
       );
 
@@ -175,17 +206,13 @@ const BrochureGenerator = () => {
       const summaryHeight = summaryTempDiv.offsetHeight;
       const summaryWidth = summaryTempDiv.offsetWidth;
 
-      if (yPos + summaryHeight + margin > pageHeight) {
-        doc.addPage();
-        yPos = margin;
-      }
-
       const summaryCanvas = await html2canvas(summaryTempDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         width: summaryWidth,
         height: summaryHeight,
+        backgroundColor: '#ffffff',
       });
       const summaryImgData = summaryCanvas.toDataURL('image/png');
       doc.addImage(summaryImgData, 'PNG', margin, yPos, summaryWidth, summaryHeight);
@@ -210,7 +237,7 @@ const BrochureGenerator = () => {
           </p>
           <div className="flex justify-center gap-4 mb-6">
             <Button
-              onClick={() => setIncludePrice(true)}
+              onClick={() => { setIncludePrice(true); setCustomPriceInput(''); }}
               variant={includePrice ? "default" : "outline"}
               className="px-6 py-2"
             >
@@ -224,6 +251,21 @@ const BrochureGenerator = () => {
               Without Price
             </Button>
           </div>
+
+          {!includePrice && (
+            <div className="mb-6 flex flex-col items-center">
+              <Label htmlFor="custom-price" className="mb-2 text-lg font-medium">Add Custom Total Price (Optional)</Label>
+              <Input
+                id="custom-price"
+                type="number"
+                placeholder="e.g., 150000"
+                value={customPriceInput}
+                onChange={(e) => setCustomPriceInput(e.target.value)}
+                className="w-full max-w-xs text-center"
+              />
+            </div>
+          )}
+
           <div className="flex justify-center mb-6">
             <Button onClick={generatePdf} className="px-8 py-3 text-lg">
               Generate Brochure ({selectedMachines.length} items)
@@ -259,6 +301,12 @@ const BrochureGenerator = () => {
                 <div className="flex justify-between items-center text-2xl font-bold text-primary">
                   <span>Total Estimated Price:</span>
                   <span>{formatCurrencyINR(totalPrice)}</span>
+                </div>
+              )}
+              {!includePrice && customPriceInput && (
+                <div className="flex justify-between items-center text-2xl font-bold text-primary">
+                  <span>Custom Total Price:</span>
+                  <span>{formatCurrencyINR(parseFloat(customPriceInput))}</span>
                 </div>
               )}
             </div>
