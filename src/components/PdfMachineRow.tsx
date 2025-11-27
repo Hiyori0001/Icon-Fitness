@@ -8,16 +8,13 @@ interface PdfMachineRowProps {
 }
 
 const PdfMachineRow: React.FC<PdfMachineRowProps> = ({ machines, includePrice }) => {
-  const emptySlots = 3 - machines.length; // Now for 3 columns
   return (
-    <div className="flex gap-4 mb-4" style={{ width: '100%', pageBreakInside: 'avoid' }}>
+    <div className="grid grid-cols-3 gap-4 mb-4" style={{ width: '100%', pageBreakInside: 'avoid' }}>
       {machines.map((machine) => (
-        <div key={machine.id} className="flex-1">
-          <PdfMachineItem machine={machine} includePrice={includePrice} />
-        </div>
+        <PdfMachineItem key={machine.id} machine={machine} includePrice={includePrice} />
       ))}
       {/* Add empty divs to fill the row if there are fewer than 3 machines */}
-      {Array.from({ length: emptySlots }).map((_, index) => (
+      {Array.from({ length: 3 - machines.length }).map((_, index) => (
         <div key={`empty-${index}`} className="flex-1"></div>
       ))}
     </div>
