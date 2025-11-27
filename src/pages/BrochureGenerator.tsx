@@ -257,44 +257,7 @@ const BrochureGenerator = () => {
           <p className="text-center text-lg text-gray-700 mb-6">
             Select the gym equipment you'd like to include in your personalized brochure.
           </p>
-          <div className="flex justify-center gap-4 mb-6">
-            <Button
-              onClick={() => { setIncludePrice(true); setCustomPriceInput(''); }}
-              variant={includePrice ? "default" : "outline"}
-              className="px-6 py-2"
-            >
-              With Price
-            </Button>
-            <Button
-              onClick={() => setIncludePrice(false)}
-              variant={!includePrice ? "default" : "outline"}
-              className="px-6 py-2"
-            >
-              Without Price
-            </Button>
-          </div>
-
-          {!includePrice && (
-            <div className="mb-6 flex flex-col items-center">
-              <Label htmlFor="custom-price" className="mb-2 text-lg font-medium">Estimated total amount</Label>
-              <Input
-                id="custom-price"
-                type="number"
-                placeholder="e.g., 150000"
-                value={customPriceInput}
-                onChange={(e) => setCustomPriceInput(e.target.value)}
-                className="w-full max-w-xs text-center"
-                required={!includePrice} // Make it required
-              />
-            </div>
-          )}
-
-          <div className="flex justify-center mb-6">
-            <Button onClick={generatePdf} className="px-8 py-3 text-lg">
-              Generate Brochure ({selectedMachines.length} items)
-            </Button>
-          </div>
-          <Separator className="my-8" />
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {allMachines.map((machine) => (
               <MachineCard
@@ -334,6 +297,47 @@ const BrochureGenerator = () => {
               )}
             </div>
           )}
+
+          <Separator className="my-8" /> {/* Separator before controls */}
+
+          <div className="flex justify-center gap-4 mb-6">
+            <Button
+              onClick={() => { setIncludePrice(true); setCustomPriceInput(''); }}
+              variant={includePrice ? "default" : "outline"}
+              className="px-6 py-2"
+            >
+              With Price
+            </Button>
+            <Button
+              onClick={() => setIncludePrice(false)}
+              variant={!includePrice ? "default" : "outline"}
+              className="px-6 py-2"
+            >
+              Without Price
+            </Button>
+          </div>
+
+          {!includePrice && (
+            <div className="mb-6 flex flex-col items-center">
+              <Label htmlFor="custom-price" className="mb-2 text-lg font-medium">Estimated total amount</Label>
+              <Input
+                id="custom-price"
+                type="number"
+                placeholder="e.g., 150000"
+                value={customPriceInput}
+                onChange={(e) => setCustomPriceInput(e.target.value)}
+                className="w-full max-w-xs text-center"
+                required={!includePrice} // Make it required
+              />
+            </div>
+          )}
+
+          <div className="flex justify-center mb-6">
+            <Button onClick={generatePdf} className="px-8 py-3 text-lg">
+              Generate Brochure ({selectedMachines.length} items)
+            </Button>
+          </div>
+
         </CardContent>
       </Card>
 
