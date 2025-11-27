@@ -14,10 +14,10 @@ const PdfMachineItem: React.FC<PdfMachineItemProps> = ({ machine, includePrice }
         <img src={machine.imageUrl} alt={machine.name} className="max-w-full max-h-full object-contain" />
       </div>
       <div className="p-3 flex-grow flex flex-col">
-        <h3 className="text-lg font-bold text-primary mb-1">{machine.name}</h3>
-        <p className="text-sm text-gray-700 flex-grow mb-2 line-clamp-3">{machine.description}</p>
+        <h3 className="text-base font-bold text-primary mb-1">{machine.name}</h3>
+        <p className="text-xs text-gray-700 flex-grow mb-2 line-clamp-3">{machine.description}</p>
         {includePrice && (
-          <p className="text-md font-bold text-secondary-foreground mt-auto">{formatCurrencyINR(machine.price)}</p>
+          <p className="text-sm font-bold text-secondary-foreground mt-auto">{formatCurrencyINR(machine.price)}</p>
         )}
       </div>
     </div>
