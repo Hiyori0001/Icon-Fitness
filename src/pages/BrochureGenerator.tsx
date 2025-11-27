@@ -79,6 +79,16 @@ const BrochureGenerator = () => {
   const selectedMachines = allMachines.filter(machine => selectedMachineIds.has(machine.id));
   const totalPrice = selectedMachines.reduce((sum, machine) => sum + machine.price, 0);
 
+  const isAllSelected = allMachines.length > 0 && selectedMachineIds.size === allMachines.length;
+
+  const handleSelectAllToggle = () => {
+    if (isAllSelected) {
+      setSelectedMachineIds(new Set());
+    } else {
+      setSelectedMachineIds(new Set(allMachines.map(machine => machine.id)));
+    }
+  };
+
   const generatePdf = async () => {
     if (selectedMachines.length === 0) {
       toast.error("Please select at least one machine to generate a brochure.");
@@ -258,6 +268,16 @@ const BrochureGenerator = () => {
             Select the gym equipment you'd like to include in your personalized brochure.
           </p>
           
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={handleSelectAllToggle}
+              variant="outline"
+              className="px-6 py-2"
+            >
+              {isAllSelected ? "Deselect All" : "Select All"}
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {allMachines.map((machine) => (
               <MachineCard
