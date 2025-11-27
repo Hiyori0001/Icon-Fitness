@@ -92,6 +92,8 @@ const BrochureGenerator = () => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     let yPos = margin; // Current Y position on the page
+    let rowsRenderedOnCurrentPage = 0;
+    const maxRowsPerPage = 3; // Max 3 rows per page (3 machines/row * 3 rows = 9 machines)
 
     // Brochure Header
     doc.setFont('helvetica', 'bold');
@@ -111,14 +113,21 @@ const BrochureGenerator = () => {
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 20;
 
-    // Group machines into rows of two
+    // Group machines into rows of three
     const machineRows: MachineWithOriginalId[][] = [];
-    for (let i = 0; i < selectedMachines.length; i += 2) {
-      machineRows.push(selectedMachines.slice(i, i + 2));
+    for (let i = 0; i < selectedMachines.length; i += 3) { // Changed from 2 to 3
+      machineRows.push(selectedMachines.slice(i, i + 3));
     }
 
     // Iterate through machine rows and add them to the PDF
     for (const row of machineRows) {
+      // Check if a new page is needed before rendering the current row
+      if (rowsRenderedOnCurrentPage === maxRowsPerPage) {
+        doc.addPage();
+        yPos = margin; // Reset Y position for new page
+        rowsRenderedOnCurrentPage = 0; // Reset row counter for new page
+      }
+
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px'; // Render off-screen
@@ -134,14 +143,9 @@ const BrochureGenerator = () => {
       const rowHeight = tempDiv.offsetHeight;
       const rowWidth = tempDiv.offsetWidth;
 
-      // Check if the row fits on the current page
-      if (yPos + rowHeight + margin > pageHeight) {
-        doc.addPage();
-        yPos = margin; // Reset Y position for new page
-      }
-
+      // Add image to PDF
       const canvas = await html2canvas(tempDiv, {
-        scale: 2,
+        scale: 2, // Render at higher resolution for better print quality
         useCORS: true,
         allowTaint: true,
         width: rowWidth,
@@ -152,6 +156,7 @@ const BrochureGenerator = () => {
       doc.addImage(imgData, 'PNG', margin, yPos, rowWidth, rowHeight);
 
       yPos += rowHeight + 15; // Add spacing between rows
+      rowsRenderedOnCurrentPage++; // Increment row counter
 
       root.unmount();
       document.body.removeChild(tempDiv);
