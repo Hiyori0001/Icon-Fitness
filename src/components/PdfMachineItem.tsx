@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { formatCurrencyINR } from '@/utils/currency';
