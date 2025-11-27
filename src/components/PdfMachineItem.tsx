@@ -10,6 +10,7 @@ interface PdfMachineItemProps {
 }
 
 const PdfMachineItem: React.FC<PdfMachineItemProps> = ({ machine, includePrice }) => {
+  // This comment is added to force a re-parse of the file.
   return (
     <div
       className="flex flex-col border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white"
