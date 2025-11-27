@@ -89,8 +89,8 @@ const BrochureGenerator = () => {
 
     const doc = new jsPDF('p', 'pt', 'a4');
     const margin = 40;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth(); // 595.28 pt for A4
+    const pageHeight = doc.internal.pageSize.getHeight(); // 841.89 pt for A4
     let yPos = margin; // Current Y position on the page
     let rowsRenderedOnCurrentPage = 0;
     const maxRowsPerPage = 3; // Max 3 rows per page (3 machines/row * 3 rows = 9 machines)
@@ -115,14 +115,16 @@ const BrochureGenerator = () => {
 
     // Group machines into rows of three
     const machineRows: MachineWithOriginalId[][] = [];
-    for (let i = 0; i < selectedMachines.length; i += 3) { // Changed from 2 to 3
+    for (let i = 0; i < selectedMachines.length; i += 3) {
       machineRows.push(selectedMachines.slice(i, i + 3));
     }
 
     // Iterate through machine rows and add them to the PDF
     for (const row of machineRows) {
       // Check if a new page is needed before rendering the current row
-      if (rowsRenderedOnCurrentPage === maxRowsPerPage) {
+      // Assuming each row takes approx 300pt height (280px item height + padding/margin)
+      const estimatedRowHeight = 300; // Estimate height of a PdfMachineRow
+      if (yPos + estimatedRowHeight > pageHeight - margin) { // Check if row will fit
         doc.addPage();
         yPos = margin; // Reset Y position for new page
         rowsRenderedOnCurrentPage = 0; // Reset row counter for new page
@@ -131,47 +133,38 @@ const BrochureGenerator = () => {
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px'; // Render off-screen
-      // Set the width of the temporary div to the exact content width of the PDF page
-      const contentWidth = pageWidth - 2 * margin;
-      tempDiv.style.width = `${contentWidth}pt`;
-      tempDiv.style.boxSizing = 'border-box'; // Ensure padding/border are included in the width
-      tempDiv.style.padding = '0'; // Explicitly remove padding
-      tempDiv.style.margin = '0'; // Explicitly remove margin
-      tempDiv.style.overflow = 'hidden'; // Ensure nothing visually spills out
+      const contentWidth = pageWidth - 2 * margin; // Available width for content in pt
+      tempDiv.style.width = `${contentWidth}pt`; // Set width in pt for html2canvas
+      tempDiv.style.boxSizing = 'border-box';
+      tempDiv.style.padding = '0';
+      tempDiv.style.margin = '0';
+      tempDiv.style.overflow = 'hidden';
       document.body.appendChild(tempDiv);
 
       const root = createRoot(tempDiv);
       root.render(<PdfMachineRow machines={row} includePrice={includePrice} />);
 
-      // Wait for React to render and images to load
-      await new Promise(resolve => setTimeout(resolve, 300)); // Increased timeout again for safety
+      await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for stability
 
-      // Get the actual rendered height of the content within the constrained width
-      const renderedHeight = tempDiv.offsetHeight;
+      const renderedHeight = tempDiv.offsetHeight; // Get actual rendered height in px
 
-      // Add image to PDF
       const canvas = await html2canvas(tempDiv, {
-        scale: 2, // Render at higher resolution for better print quality
+        scale: 2, // Render at higher resolution
         useCORS: true,
         allowTaint: true,
-        width: contentWidth, // Explicitly tell html2canvas to render to this width
-        height: renderedHeight, // Use the actual rendered height
-        backgroundColor: '#ffffff', // Ensure white background for canvas
+        width: contentWidth * (96 / 72), // Convert pt to px for html2canvas width (approx 96px per 72pt)
+        height: renderedHeight,
+        backgroundColor: '#ffffff',
       });
       const imgData = canvas.toDataURL('image/png');
 
-      // Calculate final image dimensions for PDF to ensure it fits and maintains aspect ratio
-      const imgActualWidth = canvas.width / 2; // Original pixel width before scaling for PDF
-      const imgActualHeight = canvas.height / 2; // Original pixel height before scaling for PDF
-      const aspectRatio = imgActualHeight / imgActualWidth;
+      const imgWidth = contentWidth; // Use contentWidth for PDF image width
+      const imgHeight = (canvas.height / canvas.width) * imgWidth; // Maintain aspect ratio
 
-      const finalImageWidth = contentWidth;
-      const finalImageHeight = contentWidth * aspectRatio;
+      doc.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
 
-      doc.addImage(imgData, 'PNG', margin, yPos, finalImageWidth, finalImageHeight);
-
-      yPos += finalImageHeight + 15; // Add spacing between rows
-      rowsRenderedOnCurrentPage++; // Increment row counter
+      yPos += imgHeight + 15; // Add spacing between rows
+      rowsRenderedOnCurrentPage++;
 
       root.unmount();
       document.body.removeChild(tempDiv);
@@ -185,12 +178,12 @@ const BrochureGenerator = () => {
       const summaryTempDiv = document.createElement('div');
       summaryTempDiv.style.position = 'absolute';
       summaryTempDiv.style.left = '-9999px';
-      const contentWidth = pageWidth - 2 * margin; // Recalculate for summary
+      const contentWidth = pageWidth - 2 * margin;
       summaryTempDiv.style.width = `${contentWidth}pt`;
       summaryTempDiv.style.boxSizing = 'border-box';
-      summaryTempDiv.style.padding = '0'; // Explicitly remove padding
-      summaryTempDiv.style.margin = '0'; // Explicitly remove margin
-      summaryTempDiv.style.overflow = 'hidden'; // Ensure nothing visually spills out
+      summaryTempDiv.style.padding = '0';
+      summaryTempDiv.style.margin = '0';
+      summaryTempDiv.style.overflow = 'hidden';
       document.body.appendChild(summaryTempDiv);
 
       const summaryRoot = createRoot(summaryTempDiv);
@@ -226,21 +219,23 @@ const BrochureGenerator = () => {
         </div>
       );
 
-      await new Promise(resolve => setTimeout(resolve, 300)); // Increased timeout for stability
+      await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for stability
 
-      const summaryHeight = summaryTempDiv.offsetHeight;
-      const summaryWidth = summaryTempDiv.offsetWidth;
-
+      const summaryRenderedHeight = summaryTempDiv.offsetHeight;
       const summaryCanvas = await html2canvas(summaryTempDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        width: summaryWidth,
-        height: summaryHeight,
+        width: contentWidth * (96 / 72), // Convert pt to px for html2canvas width
+        height: summaryRenderedHeight,
         backgroundColor: '#ffffff',
       });
       const summaryImgData = summaryCanvas.toDataURL('image/png');
-      doc.addImage(summaryImgData, 'PNG', margin, yPos, summaryWidth, summaryHeight);
+
+      const summaryImgWidth = contentWidth;
+      const summaryImgHeight = (summaryCanvas.height / summaryCanvas.width) * summaryImgWidth;
+
+      doc.addImage(summaryImgData, 'PNG', margin, yPos, summaryImgWidth, summaryImgHeight);
 
       summaryRoot.unmount();
       document.body.removeChild(summaryTempDiv);
