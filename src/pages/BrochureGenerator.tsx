@@ -49,8 +49,8 @@ const BrochureGenerator = () => {
     }
   };
 
-  const handleSaveImage = (machineId: string, newImageUrl: string) => {
-    updateMachine(machineId, { imageUrl: newImageUrl });
+  const handleSaveImage = (machineId: string, newImageUrl: string, isGlobal: boolean) => {
+    updateMachine(machineId, { imageUrl: newImageUrl }, isGlobal);
     setEditingImageMachine(null);
   };
 
@@ -62,13 +62,13 @@ const BrochureGenerator = () => {
     }
   };
 
-  const handleSaveDetails = (machineId: string, updates: { name?: string; description?: string; price?: number }) => {
-    updateMachine(machineId, updates);
+  const handleSaveDetails = (machineId: string, updates: { name?: string; description?: string; price?: number }, isGlobal: boolean) => {
+    updateMachine(machineId, updates, isGlobal);
     setEditingDetailsMachine(null);
   };
 
-  const handleDeleteMachine = (machineId: string, isCustomizedPredefined: boolean) => {
-    deleteMachine(machineId, isCustomizedPredefined);
+  const handleDeleteMachine = (machineId: string, isCustomizedPredefined: boolean, isGlobal: boolean) => {
+    deleteMachine(machineId, isCustomizedPredefined, isGlobal);
     setSelectedMachineIds(prev => {
       const newSet = new Set(prev);
       newSet.delete(machineId);

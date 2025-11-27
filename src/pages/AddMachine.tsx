@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { useMachines } from "@/hooks/useMachines";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
+import { useAdmin } from '@/hooks/useAdmin';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -36,7 +37,8 @@ const AddMachine = () => {
   const { addMachine } = useMachines();
   const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { isAdmin, isLoadingAdmin } = useAdmin(); // Use the useAdmin hook
+  const [isGlobal, setIsGlobal] = useState(false); // New state for global checkbox
+  const { isAdmin, isLoadingAdmin } = useAdmin();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,8 +51,8 @@ const AddMachine = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!isAdmin) {
-      toast.error("You do not have permission to add machines.");
+    if (!isAdmin && isGlobal) {
+      toast.error("You do not have permission to add global machines.");
       return;
     }
 
@@ -91,10 +93,10 @@ const AddMachine = () => {
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
-    addMachine({ ...values, imageUrl: finalImageUrl });
-    toast.success("Machine added successfully!");
+    addMachine({ ...values, imageUrl: finalImageUrl }, isGlobal);
     form.reset();
     setImageFile(null);
+    setIsGlobal(false); // Reset global checkbox
     navigate('/brochure-generator');
   };
 
@@ -106,8 +108,6 @@ const AddMachine = () => {
     );
   }
 
-  // The ProtectedRoute component already handles redirection if not admin,
-  // but this provides an explicit message if somehow accessed directly.
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -164,7 +164,7 @@ const AddMachine = () => {
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price (INR)</FormLabel> {/* Updated label */}
+                    <FormLabel>Price (INR)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="e.g., 75000" {...field} onChange={event => field.onChange(parseFloat(event.target.value))} />
                     </FormControl>
@@ -198,6 +198,16 @@ const AddMachine = () => {
                   </FormItem>
                 )}
               />
+              {isAdmin && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is-global"
+                    checked={isGlobal}
+                    onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
+                  />
+                  <Label htmlFor="is-global">Make this a global machine (visible to all users)</Label>
+                </div>
+              )}
               <Button type="submit" className="w-full">Add Machine</Button>
             </form>
           </Form>

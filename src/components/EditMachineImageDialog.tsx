@@ -6,27 +6,31 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { Machine } from '@/data/machines';
-import { useAdmin } from '@/hooks/useAdmin'; // Import useAdmin
+import { useAdmin } from '@/hooks/useAdmin';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
+import { MachineWithOriginalId } from '@/hooks/useMachines'; // Use extended interface
 
 interface EditMachineImageDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  machine: Machine;
-  onSave: (machineId: string, newImageUrl: string) => void;
+  machine: MachineWithOriginalId; // Use extended interface
+  onSave: (machineId: string, newImageUrl: string, isGlobal: boolean) => void;
 }
 
 const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen, onClose, machine, onSave }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>(machine.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
-  const { isAdmin } = useAdmin(); // Use the useAdmin hook
+  const [isGlobalUpdate, setIsGlobalUpdate] = useState(machine.is_global || false); // State for global checkbox
+  const { isAdmin } = useAdmin();
 
   React.useEffect(() => {
     if (isOpen) {
       setImageFile(null);
       setImageUrlInput(machine.imageUrl);
+      setIsGlobalUpdate(machine.is_global || false); // Set initial state based on machine
     }
-  }, [isOpen, machine.imageUrl]);
+  }, [isOpen, machine.imageUrl, machine.is_global]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -45,6 +49,10 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
   const handleSubmit = async () => {
     if (!isAdmin) {
       toast.error("You do not have permission to edit machine images.");
+      return;
+    }
+    if (!isAdmin && isGlobalUpdate) {
+      toast.error("You do not have permission to make global updates.");
       return;
     }
 
@@ -88,7 +96,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
-    onSave(machine.id, finalImageUrl);
+    onSave(machine.id, finalImageUrl, isGlobalUpdate);
     toast.success("Machine image updated successfully!");
     setIsUploading(false);
     onClose();
@@ -111,7 +119,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
               type="file"
               accept="image/*"
               onChange={handleFileChange}
-              disabled={isUploading || !isAdmin} // Disable if not admin
+              disabled={isUploading || !isAdmin}
             />
             <p className="text-sm text-muted-foreground">
               Or provide an image URL below if you prefer.
@@ -124,21 +132,32 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
               placeholder="https://example.com/image.jpg"
               value={imageUrlInput}
               onChange={handleImageUrlInputChange}
-              disabled={isUploading || !!imageFile || !isAdmin} // Disable if not admin
+              disabled={isUploading || !!imageFile || !isAdmin}
             />
           </div>
           {machine.imageUrl && (
             <div className="mt-4">
               <Label>Current Image:</Label>
-              <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-md mt-2"> {/* Added wrapper for contain */}
+              <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-md mt-2">
                 <img src={machine.imageUrl} alt="Current Machine" className="max-w-full max-h-full object-contain" />
               </div>
+            </div>
+          )}
+          {isAdmin && (
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="is-global-image-update"
+                checked={isGlobalUpdate}
+                onCheckedChange={(checked) => setIsGlobalUpdate(checked as boolean)}
+                disabled={isUploading || !isAdmin}
+              />
+              <Label htmlFor="is-global-image-update">Apply this as a global update (visible to all users)</Label>
             </div>
           )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={isUploading || !isAdmin}> {/* Disable if not admin */}
+          <Button onClick={handleSubmit} disabled={isUploading || !isAdmin}>
             {isUploading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>

@@ -12,12 +12,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { MachineWithOriginalId } from '@/hooks/useMachines';
 import { useAdmin } from '@/hooks/useAdmin';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
 
 interface EditMachineDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   machine: MachineWithOriginalId;
-  onSave: (machineId: string, updates: { name?: string; description?: string; price?: number }) => void;
+  onSave: (machineId: string, updates: { name?: string; description?: string; price?: number }, isGlobal: boolean) => void;
 }
 
 const formSchema = z.object({
@@ -38,6 +39,8 @@ const formSchema = z.object({
 
 const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isOpen, onClose, machine, onSave }) => {
   const { isAdmin } = useAdmin();
+  const [isGlobalUpdate, setIsGlobalUpdate] = React.useState(machine.is_global || false); // State for global checkbox
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,6 +57,7 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
         description: machine.description,
         price: machine.price,
       });
+      setIsGlobalUpdate(machine.is_global || false); // Set initial state based on machine
     }
   }, [isOpen, machine, form]);
 
@@ -62,7 +66,11 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
       toast.error("You do not have permission to edit machine details.");
       return;
     }
-    onSave(machine.id, values);
+    if (!isAdmin && isGlobalUpdate) {
+      toast.error("You do not have permission to make global updates.");
+      return;
+    }
+    onSave(machine.id, values, isGlobalUpdate);
     toast.success("Machine details updated successfully!");
     onClose();
   };
@@ -114,7 +122,7 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price (INR)</FormLabel> {/* Updated label */}
+                  <FormLabel>Price (INR)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -128,6 +136,17 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
                 </FormItem>
               )}
             />
+            {isAdmin && (
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                  id="is-global-update"
+                  checked={isGlobalUpdate}
+                  onCheckedChange={(checked) => setIsGlobalUpdate(checked as boolean)}
+                  disabled={!isAdmin}
+                />
+                <Label htmlFor="is-global-update">Apply this as a global update (visible to all users)</Label>
+              </div>
+            )}
             <DialogFooter>
               <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
               <Button type="submit" disabled={!isAdmin}>Save Changes</Button>

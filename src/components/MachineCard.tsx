@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MachineWithOriginalId } from "@/hooks/useMachines"; // Use the extended interface
+import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash, Info } from 'lucide-react'; // Import Info icon
+import { Edit, Trash, Info } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
-import DeleteMachineDialog from './DeleteMachineDialog'; // Import the new dialog
-import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
+import DeleteMachineDialog from './DeleteMachineDialog';
+import { formatCurrencyINR } from '@/utils/currency';
 
 interface MachineCardProps {
-  machine: MachineWithOriginalId; // Use the extended interface
+  machine: MachineWithOriginalId;
   isSelected: boolean;
   onSelect: (machineId: string, isSelected: boolean) => void;
   onEditImageClick: (machine: MachineWithOriginalId) => void;
-  onEditDetailsClick: (machine: MachineWithOriginalId) => void; // New prop for editing details
-  onDeleteMachine: (machineId: string, isCustomizedPredefined: boolean) => void;
+  onEditDetailsClick: (machine: MachineWithOriginalId) => void;
+  onDeleteMachine: (machineId: string, isCustomizedPredefined: boolean, isGlobal: boolean) => void; // Updated prop
 }
 
 const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect, onEditImageClick, onEditDetailsClick, onDeleteMachine }) => {
@@ -52,7 +52,7 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onEditDetailsClick(machine)} // New button for editing details
+              onClick={() => onEditDetailsClick(machine)}
               title="Edit Machine Details"
             >
               <Info className="h-5 w-5 text-gray-500 hover:text-blue-500" />
