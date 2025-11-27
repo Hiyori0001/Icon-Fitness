@@ -9,7 +9,10 @@ interface PdfMachineItemProps {
 
 const PdfMachineItem: React.FC<PdfMachineItemProps> = ({ machine, includePrice }) => {
   return (
-    <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white" style={{ pageBreakInside: 'avoid', height: '280px' }}> {/* Fixed height for consistent card size */}
+    <div
+      className="flex flex-col border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white"
+      style={{ pageBreakInside: 'avoid', height: '280px' }} // Fixed height for consistent card size
+    >
       <div className="w-full h-32 flex-shrink-0 flex items-center justify-center bg-gray-100 p-2"> {/* Fixed image container height */}
         <img src={machine.imageUrl} alt={machine.name} className="max-w-full max-h-full object-contain" />
       </div>
