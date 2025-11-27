@@ -16,7 +16,7 @@ import EditMachineDetailsDialog from "@/components/EditMachineDetailsDialog";
 import { useAdmin } from '@/hooks/useAdmin';
 import BrochureContent from '@/components/BrochureContent';
 import { formatCurrencyINR } from '@/utils/currency';
-import PdfMachineRow from '@/components/PdfMachineRow'; // Import the new component
+import PdfMachineRow from '@/components/PdfMachineRow';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -26,7 +26,7 @@ const BrochureGenerator = () => {
   const [editingImageMachine, setEditingImageMachine] = useState<MachineWithOriginalId | null>(null);
   const [editingDetailsMachine, setEditingDetailsMachine] = useState<MachineWithOriginalId | null>(null);
   const [includePrice, setIncludePrice] = useState(true);
-  const [customPriceInput, setCustomPriceInput] = useState<string>(''); // New state for custom price
+  const [customPriceInput, setCustomPriceInput] = useState<string>('');
   const { isAdmin } = useAdmin();
 
   const handleSelectMachine = (machineId: string, isSelected: boolean) => {
@@ -82,6 +82,11 @@ const BrochureGenerator = () => {
   const generatePdf = async () => {
     if (selectedMachines.length === 0) {
       toast.error("Please select at least one machine to generate a brochure.");
+      return;
+    }
+
+    if (!includePrice && (!customPriceInput || isNaN(parseFloat(customPriceInput)))) {
+      toast.error("Please enter an estimated total amount when not including individual prices.");
       return;
     }
 
@@ -171,7 +176,7 @@ const BrochureGenerator = () => {
     }
 
     // Add summary if prices are included or custom price is provided
-    if (includePrice || (!includePrice && customPriceInput)) {
+    if (includePrice || customPriceInput) {
       doc.addPage(); // Always add summary on a new page
       yPos = margin;
 
@@ -209,12 +214,9 @@ const BrochureGenerator = () => {
           )}
           {!includePrice && customPriceInput && (
             <div className="flex justify-between items-center text-2xl font-bold text-primary">
-              <span>Custom Total Price:</span>
+              <span>Estimated Total Amount:</span>
               <span>{formatCurrencyINR(parseFloat(customPriceInput))}</span>
             </div>
-          )}
-          {!includePrice && !customPriceInput && (
-            <p className="text-lg text-gray-600">No pricing information included.</p>
           )}
         </div>
       );
@@ -274,7 +276,7 @@ const BrochureGenerator = () => {
 
           {!includePrice && (
             <div className="mb-6 flex flex-col items-center">
-              <Label htmlFor="custom-price" className="mb-2 text-lg font-medium">Add Custom Total Price (Optional)</Label>
+              <Label htmlFor="custom-price" className="mb-2 text-lg font-medium">Estimated total amount</Label>
               <Input
                 id="custom-price"
                 type="number"
@@ -282,6 +284,7 @@ const BrochureGenerator = () => {
                 value={customPriceInput}
                 onChange={(e) => setCustomPriceInput(e.target.value)}
                 className="w-full max-w-xs text-center"
+                required={!includePrice} // Make it required
               />
             </div>
           )}
@@ -325,7 +328,7 @@ const BrochureGenerator = () => {
               )}
               {!includePrice && customPriceInput && (
                 <div className="flex justify-between items-center text-2xl font-bold text-primary">
-                  <span>Custom Total Price:</span>
+                  <span>Estimated Total Amount:</span>
                   <span>{formatCurrencyINR(parseFloat(customPriceInput))}</span>
                 </div>
               )}

@@ -2,12 +2,12 @@ import * as React from 'react';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrencyINR } from '@/utils/currency'; // Import the new utility
+import { formatCurrencyINR } from '@/utils/currency';
 
 interface BrochureContentProps {
   machines: MachineWithOriginalId[];
   includePrice: boolean;
-  customPrice?: string; // New prop for custom price
+  customPrice?: string;
 }
 
 const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePrice, customPrice }) => {
@@ -65,7 +65,7 @@ const BrochureContent: React.FC<BrochureContentProps> = ({ machines, includePric
             )}
             {!includePrice && customPrice && (
               <div className="flex justify-between items-center text-2xl font-bold text-primary">
-                <span>Custom Total Price:</span>
+                <span>Estimated Total Amount:</span>
                 <span>{formatCurrencyINR(parseFloat(customPrice))}</span>
               </div>
             )}
