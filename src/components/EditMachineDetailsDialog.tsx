@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { MachineWithOriginalId } from '@/hooks/useMachines';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
+// Removed Checkbox import as it's no longer needed
 
 interface EditMachineDetailsDialogProps {
   isOpen: boolean;
@@ -39,7 +39,7 @@ const formSchema = z.object({
 
 const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isOpen, onClose, machine, onSave }) => {
   const { isAdmin } = useAdmin();
-  const [isGlobalUpdate, setIsGlobalUpdate] = React.useState(machine.is_global || false); // State for global checkbox
+  // Removed isGlobalUpdate state as all updates will be global
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,7 +57,7 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
         description: machine.description,
         price: machine.price,
       });
-      setIsGlobalUpdate(machine.is_global || false); // Set initial state based on machine
+      // Removed setIsGlobalUpdate as it's no longer needed
     }
   }, [isOpen, machine, form]);
 
@@ -66,11 +66,8 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
       toast.error("You do not have permission to edit machine details.");
       return;
     }
-    if (!isAdmin && isGlobalUpdate) {
-      toast.error("You do not have permission to make global updates.");
-      return;
-    }
-    onSave(machine.id, values, isGlobalUpdate);
+    // Removed isAdmin && isGlobalUpdate check as all updates will be global
+    onSave(machine.id, values, true); // Always pass true for isGlobal
     toast.success("Machine details updated successfully!");
     onClose();
   };
@@ -136,17 +133,7 @@ const EditMachineDetailsDialog: React.FC<EditMachineDetailsDialogProps> = ({ isO
                 </FormItem>
               )}
             />
-            {isAdmin && (
-              <div className="flex items-center space-x-2 mt-2">
-                <Checkbox
-                  id="is-global-update"
-                  checked={isGlobalUpdate}
-                  onCheckedChange={(checked) => setIsGlobalUpdate(checked as boolean)}
-                  disabled={!isAdmin}
-                />
-                <Label htmlFor="is-global-update">Apply this as a global update (visible to all users)</Label>
-              </div>
-            )}
+            {/* Removed the global checkbox as all updates will be global */}
             <DialogFooter>
               <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
               <Button type="submit" disabled={!isAdmin}>Save Changes</Button>

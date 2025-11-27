@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-import { Machine } from '@/data/machines';
+// Removed Machine import as it's no longer needed
 import { useAdmin } from '@/hooks/useAdmin';
-import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
+// Removed Checkbox import as it's no longer needed
 import { MachineWithOriginalId } from '@/hooks/useMachines'; // Use extended interface
 
 interface EditMachineImageDialogProps {
@@ -21,14 +21,14 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>(machine.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGlobalUpdate, setIsGlobalUpdate] = useState(machine.is_global || false); // State for global checkbox
+  // Removed isGlobalUpdate state as all updates will be global
   const { isAdmin } = useAdmin();
 
   React.useEffect(() => {
     if (isOpen) {
       setImageFile(null);
       setImageUrlInput(machine.imageUrl);
-      setIsGlobalUpdate(machine.is_global || false); // Set initial state based on machine
+      // Removed setIsGlobalUpdate as it's no longer needed
     }
   }, [isOpen, machine.imageUrl, machine.is_global]);
 
@@ -51,10 +51,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
       toast.error("You do not have permission to edit machine images.");
       return;
     }
-    if (!isAdmin && isGlobalUpdate) {
-      toast.error("You do not have permission to make global updates.");
-      return;
-    }
+    // Removed isAdmin && isGlobalUpdate check as all updates will be global
 
     setIsUploading(true);
     let finalImageUrl = imageUrlInput;
@@ -96,7 +93,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
-    onSave(machine.id, finalImageUrl, isGlobalUpdate);
+    onSave(machine.id, finalImageUrl, true); // Always pass true for isGlobal
     toast.success("Machine image updated successfully!");
     setIsUploading(false);
     onClose();
@@ -143,17 +140,7 @@ const EditMachineImageDialog: React.FC<EditMachineImageDialogProps> = ({ isOpen,
               </div>
             </div>
           )}
-          {isAdmin && (
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="is-global-image-update"
-                checked={isGlobalUpdate}
-                onCheckedChange={(checked) => setIsGlobalUpdate(checked as boolean)}
-                disabled={isUploading || !isAdmin}
-              />
-              <Label htmlFor="is-global-image-update">Apply this as a global update (visible to all users)</Label>
-            </div>
-          )}
+          {/* Removed the global checkbox as all updates will be global */}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>

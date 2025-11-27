@@ -12,7 +12,7 @@ import { useMachines } from "@/hooks/useMachines";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
+// Removed Checkbox import as it's no longer needed
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -37,7 +37,7 @@ const AddMachine = () => {
   const { addMachine } = useMachines();
   const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isGlobal, setIsGlobal] = useState(false); // New state for global checkbox
+  // Removed isGlobal state as all additions will be global
   const { isAdmin, isLoadingAdmin } = useAdmin();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -51,11 +51,8 @@ const AddMachine = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!isAdmin && isGlobal) {
-      toast.error("You do not have permission to add global machines.");
-      return;
-    }
-
+    // Removed isAdmin && isGlobal check as all additions will be global and only admins can access this page
+    
     let finalImageUrl = values.imageUrl || '';
 
     if (imageFile) {
@@ -93,10 +90,10 @@ const AddMachine = () => {
       finalImageUrl = "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image";
     }
 
-    addMachine({ ...values, imageUrl: finalImageUrl }, isGlobal);
+    addMachine({ ...values, imageUrl: finalImageUrl }, true); // Always pass true for isGlobal
     form.reset();
     setImageFile(null);
-    setIsGlobal(false); // Reset global checkbox
+    // Removed setIsGlobal(false) as it's no longer needed
     navigate('/brochure-generator');
   };
 
@@ -198,16 +195,7 @@ const AddMachine = () => {
                   </FormItem>
                 )}
               />
-              {isAdmin && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="is-global"
-                    checked={isGlobal}
-                    onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
-                  />
-                  <Label htmlFor="is-global">Make this a global machine (visible to all users)</Label>
-                </div>
-              )}
+              {/* Removed the global checkbox as all additions will be global */}
               <Button type="submit" className="w-full">Add Machine</Button>
             </form>
           </Form>
