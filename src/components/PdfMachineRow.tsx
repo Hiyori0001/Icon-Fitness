@@ -1,6 +1,6 @@
 import React from 'react';
 import { MachineWithOriginalId } from "@/hooks/useMachines";
-import PdfMachineItem from './PdfMachineItem';
+import PdfBrochureItem from './PdfBrochureItem'; // Updated import path
 
 interface PdfMachineRowProps {
   machines: MachineWithOriginalId[];
@@ -25,7 +25,7 @@ const PdfMachineRow: React.FC<PdfMachineRowProps> = ({ machines, includePrice })
             flexShrink: 0, // Prevent items from shrinking
           }}
         >
-          <PdfMachineItem machine={machine} includePrice={includePrice} />
+          <PdfBrochureItem machine={machine} includePrice={includePrice} />
         </div>
       ))}
       {/* Add empty divs to fill the row if there are fewer than 3 machines, maintaining layout */}
