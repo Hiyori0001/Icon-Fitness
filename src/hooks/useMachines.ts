@@ -8,90 +8,77 @@ import { toast } from 'sonner';
 export interface MachineWithOriginalId extends Machine {
   original_machine_id?: string | null;
   is_global?: boolean; // Added for UI representation, not directly stored in DB as a column
+  user_id?: string | null; // Added to store the user_id from custom_machines table
 }
 
 export const useMachines = () => {
   const { user, isLoading: isSessionLoading } = useSession();
   const [allMachines, setAllMachines] = useState<MachineWithOriginalId[]>([]);
   const [isLoadingCustomMachines, setIsLoadingCustomMachines] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // New state to trigger re-fetch
 
   useEffect(() => {
     const fetchAndMergeMachines = async () => {
       setIsLoadingCustomMachines(true);
-      let globalCustomMachines: MachineWithOriginalId[] = [];
-      let userCustomMachines: MachineWithOriginalId[] = [];
+      let customMachinesFromDb: MachineWithOriginalId[] = [];
 
-      // Fetch global custom machines (user_id IS NULL)
-      const { data: globalData, error: globalError } = await supabase
+      // Fetch all custom machines relevant to the current user (global + user-specific)
+      let query = supabase
         .from('custom_machines')
-        .select('id, name, description, price, image_url, original_machine_id')
-        .is('user_id', null);
+        .select('id, name, description, price, image_url, original_machine_id, user_id');
 
-      if (globalError) {
-        console.error("Error fetching global custom machines:", globalError);
-        toast.error("Failed to load global machine customizations.");
+      if (user) {
+        // If logged in, fetch global machines (user_id IS NULL) and user's own machines
+        query = query.or(`user_id.is.null,user_id.eq.${user.id}`);
       } else {
-        globalCustomMachines = globalData.map(dbMachine => ({
+        // If not logged in, only fetch global machines (user_id IS NULL)
+        query = query.is('user_id', null);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching custom machines:", error);
+        toast.error("Failed to load machine customizations.");
+      } else {
+        customMachinesFromDb = data.map(dbMachine => ({
           id: dbMachine.id,
           name: dbMachine.name,
           description: dbMachine.description,
           price: dbMachine.price,
           imageUrl: dbMachine.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
           original_machine_id: dbMachine.original_machine_id,
-          is_global: true,
+          is_global: dbMachine.user_id === null, // Determine is_global based on user_id
+          user_id: dbMachine.user_id, // Keep user_id for internal logic
         }));
       }
 
-      // Fetch user-specific custom machines (user_id = current_user_id)
-      if (user) {
-        const { data: userData, error: userError } = await supabase
-          .from('custom_machines')
-          .select('id, name, description, price, image_url, original_machine_id')
-          .eq('user_id', user.id);
-
-        if (userError) {
-          console.error("Error fetching user custom machines:", userError);
-          toast.error("Failed to load your personal custom machines.");
-        } else {
-          userCustomMachines = userData.map(dbMachine => ({
-            id: dbMachine.id,
-            name: dbMachine.name,
-            description: dbMachine.description,
-            price: dbMachine.price,
-            imageUrl: dbMachine.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
-            original_machine_id: dbMachine.original_machine_id,
-            is_global: false,
-          }));
-        }
-      }
-
-      // Create maps for quick lookup
-      const globalOverrides = new Map<string, MachineWithOriginalId>(); // Key: original_machine_id or custom_id
-      const userOverrides = new Map<string, MachineWithOriginalId>(); // Key: original_machine_id or custom_id
+      const globalOverrides = new Map<string, MachineWithOriginalId>(); // Key: original_machine_id
+      const userOverrides = new Map<string, MachineWithOriginalId>();   // Key: original_machine_id
       const purelyGlobalMachines: MachineWithOriginalId[] = [];
       const purelyUserMachines: MachineWithOriginalId[] = [];
 
-      globalCustomMachines.forEach(cm => {
+      customMachinesFromDb.forEach(cm => {
         if (cm.original_machine_id) {
-          globalOverrides.set(cm.original_machine_id, cm);
+          if (cm.is_global) {
+            globalOverrides.set(cm.original_machine_id, cm);
+          } else if (user && cm.user_id === user.id) { // Ensure it's the current user's override
+            userOverrides.set(cm.original_machine_id, cm);
+          }
         } else {
-          purelyGlobalMachines.push(cm);
+          if (cm.is_global) {
+            purelyGlobalMachines.push(cm);
+          } else if (user && cm.user_id === user.id) { // Ensure it's the current user's purely custom machine
+            purelyUserMachines.push(cm);
+          }
         }
       });
 
-      userCustomMachines.forEach(cm => {
-        if (cm.original_machine_id) {
-          userOverrides.set(cm.original_machine_id, cm);
-        } else {
-          purelyUserMachines.push(cm);
-        }
-      });
+      // Start with predefined machines
+      const mergedMachines: MachineWithOriginalId[] = gymMachines.map(gm => {
+        let currentMachine: MachineWithOriginalId = { ...gm, is_global: false }; // Default to not global
 
-      // Merge gymMachines with global overrides, then with user overrides
-      const mergedMachines = gymMachines.map(gm => {
-        let currentMachine = { ...gm, is_global: false }; // Default to not global
-
-        // Apply global override if exists
+        // Apply global override if it exists for this predefined machine
         if (globalOverrides.has(gm.id)) {
           const override = globalOverrides.get(gm.id)!;
           currentMachine = {
@@ -106,8 +93,8 @@ export const useMachines = () => {
           };
         }
 
-        // Apply user override if exists (takes precedence over global)
-        if (userOverrides.has(gm.id)) {
+        // Apply user override if it exists (takes precedence over global and predefined)
+        if (user && userOverrides.has(gm.id)) {
           const override = userOverrides.get(gm.id)!;
           currentMachine = {
             ...currentMachine,
@@ -137,7 +124,7 @@ export const useMachines = () => {
     if (!isSessionLoading) {
       fetchAndMergeMachines();
     }
-  }, [user, isSessionLoading]);
+  }, [user, isSessionLoading, refreshTrigger]); // Add refreshTrigger to dependencies
 
   const addMachine = async (newMachine: Omit<Machine, 'id'>, isGlobal: boolean) => {
     if (!user) {
@@ -171,18 +158,8 @@ export const useMachines = () => {
       return;
     }
 
-    const addedMachineData = data[0];
-    const addedMachine: MachineWithOriginalId = {
-      id: addedMachineData.id,
-      name: addedMachineData.name,
-      description: addedMachineData.description,
-      price: addedMachineData.price,
-      imageUrl: addedMachineData.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
-      original_machine_id: addedMachineData.original_machine_id,
-      is_global: isGlobal,
-    };
-
-    setAllMachines(prevMachines => [...prevMachines, addedMachine]);
+    // Trigger a re-fetch to ensure all machines are correctly merged and displayed
+    setRefreshTrigger(prev => prev + 1); 
     toast.success(`Custom machine ${isGlobal ? 'globally' : 'personally'} added successfully!`);
   };
 
@@ -196,13 +173,13 @@ export const useMachines = () => {
 
     if (isUUID) {
       // This is an existing custom machine (either global or user-specific)
-      const targetUserId = isGlobalUpdate ? null : user.id; // If global update, target user_id=NULL, else current user
+      const targetUserId = isGlobalUpdate ? null : user.id; 
 
       const { error } = await supabase
         .from('custom_machines')
         .update(updates)
         .eq('id', machineId)
-        .eq('user_id', targetUserId); // Ensure we update the correct scope
+        .is('user_id', targetUserId); // Ensure we update the correct scope
 
       if (error) {
         console.error("Error updating custom machine:", error);
@@ -210,11 +187,8 @@ export const useMachines = () => {
         return;
       }
 
-      setAllMachines(prevMachines => {
-        return prevMachines.map(machine =>
-          machine.id === machineId ? { ...machine, ...updates, is_global: isGlobalUpdate } : machine
-        );
-      });
+      // Trigger a re-fetch to ensure all machines are correctly merged and displayed
+      setRefreshTrigger(prev => prev + 1); 
       toast.success(`Machine ${isGlobalUpdate ? 'global' : 'personal'} customization updated successfully!`);
     } else {
       // This is a predefined machine ID (e.g., "1", "2").
@@ -256,11 +230,8 @@ export const useMachines = () => {
           return;
         }
 
-        setAllMachines(prevMachines => {
-          return prevMachines.map(machine =>
-            machine.id === existingCustom.id ? { ...machine, ...updates, is_global: isGlobalUpdate } : machine
-          );
-        });
+        // Trigger a re-fetch
+        setRefreshTrigger(prev => prev + 1); 
         toast.success(`Machine ${isGlobalUpdate ? 'global' : 'personal'} customization updated successfully!`);
       } else {
         // No existing override for this scope, create a new custom entry
@@ -288,27 +259,8 @@ export const useMachines = () => {
           return;
         }
 
-        const customizedMachineData = insertData[0];
-        const customizedMachine: MachineWithOriginalId = {
-          id: customizedMachineData.id, // This will be a new UUID
-          name: customizedMachineData.name,
-          description: customizedMachineData.description,
-          price: customizedMachineData.price,
-          imageUrl: customizedMachineData.image_url || "https://via.placeholder.com/150/CCCCCC/000000?text=No+Image",
-          original_machine_id: customizedMachineData.original_machine_id,
-          is_global: isGlobalUpdate,
-        };
-
-        // Find the index of the original predefined machine and replace it
-        setAllMachines(prevMachines => {
-          const index = prevMachines.findIndex(m => m.id === machineId);
-          if (index !== -1) {
-            const newMachines = [...prevMachines];
-            newMachines[index] = customizedMachine;
-            return newMachines;
-          }
-          return [...prevMachines, customizedMachine]; // Fallback if not found (shouldn't happen for predefined)
-        });
+        // Trigger a re-fetch
+        setRefreshTrigger(prev => prev + 1); 
         toast.success(`Machine ${isGlobalUpdate ? 'globally' : 'personally'} customized successfully!`);
       }
     }
@@ -322,46 +274,21 @@ export const useMachines = () => {
 
     const targetUserId = isGlobal ? null : user.id;
 
-    if (isCustomizedPredefined) {
-      // If it's a customized predefined machine, delete the custom override
-      const { error } = await supabase
-        .from('custom_machines')
-        .delete()
-        .eq('id', machineId)
-        .is('user_id', targetUserId); // Ensure we delete the correct scope
+    const { error } = await supabase
+      .from('custom_machines')
+      .delete()
+      .eq('id', machineId)
+      .is('user_id', targetUserId);
 
-      if (error) {
-        console.error("Error reverting custom machine:", error);
-        toast.error(`Failed to revert customization: ${error.message}`);
-        return;
-      }
-
-      // Revert to the original predefined machine in the state
-      setAllMachines(prevMachines => {
-        const originalMachine = gymMachines.find(gm => gm.id === prevMachines.find(pm => pm.id === machineId)?.original_machine_id);
-        if (originalMachine) {
-          return prevMachines.map(m => m.id === machineId ? originalMachine : m);
-        }
-        return prevMachines.filter(m => m.id !== machineId); // Should not happen for predefined
-      });
-      toast.success(`Machine ${isGlobal ? 'global' : 'personal'} customization reverted successfully!`);
-    } else {
-      // If it's a purely custom machine, delete it entirely
-      const { error } = await supabase
-        .from('custom_machines')
-        .delete()
-        .eq('id', machineId)
-        .is('user_id', targetUserId); // Ensure we delete the correct scope
-
-      if (error) {
-        console.error("Error deleting custom machine:", error);
-        toast.error(`Failed to delete custom machine: ${error.message}`);
-        return;
-      }
-
-      setAllMachines(prevMachines => prevMachines.filter(machine => machine.id !== machineId));
-      toast.success(`Custom machine ${isGlobal ? 'globally' : 'personally'} deleted successfully!`);
+    if (error) {
+      console.error("Error deleting custom machine:", error);
+      toast.error(`Failed to delete machine: ${error.message}`);
+      return;
     }
+
+    // Trigger a re-fetch to ensure all machines are correctly merged and displayed
+    setRefreshTrigger(prev => prev + 1); 
+    toast.success(`Machine ${isCustomizedPredefined ? 'customization reverted' : 'deleted'} successfully!`);
   };
 
   return { allMachines, addMachine, updateMachine, deleteMachine, isLoadingCustomMachines };
